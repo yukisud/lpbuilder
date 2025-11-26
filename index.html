@@ -619,7 +619,7 @@
       `;
 
       return `
-        <div class="flex flex-col md:flex-row items-end justify-center gap-8 md:gap-12 mt-12 w-full">
+        <div class="flex flex-col md:flex-row items-start justify-start gap-8 md:gap-12 mt-12 w-full">
            ${sub}
            ${main}
         </div>
@@ -681,7 +681,7 @@
 
       // 🎯 ⑤ 置き換えコード（Hero）
       const ctaArea = d.showSubCta
-        ? `<div class="mt-6">${renderMaterialBanner(d.subCtaText, d.subCtaUrl)}</div>`
+        ? `<div class="mt-6 fv-banner">${renderMaterialBanner(d.subCtaText, d.subCtaUrl)}</div>`
         : '';
 
       let layoutHtml = '';
@@ -1297,53 +1297,159 @@
     
     // Export Function
     function exportHtml() {
-      const content = document.getElementById('canvas').innerHTML;
-      const cssVarsMatch = content.match(/<style>[\s\S]*?:root[\s\S]*?<\/style>/);
-      const cssVars = cssVarsMatch ? cssVarsMatch[0] : '';
+  const content = document.getElementById('canvas').innerHTML;
 
-      const head = `<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Landing Page</title>
-  <script src="https://cdn.tailwindcss.com"><\/script>
-  <script src="https://unpkg.com/@phosphor-icons/web"><\/script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', 'Noto Sans JP', sans-serif; }
-    /* Animation for Marquee */
-    @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-    .animate-marquee { animation: marquee 25s linear infinite; }
-  </style>
-  ${cssVars}
-  <script src="//js-na2.hsforms.net/forms/embed/v2.js"><\/script>
-</head>
-<body>`;
-      
-      const foot = `
-  <script>
-    window.addEventListener('load', function() {
-      if(window.hbspt) {
-        document.querySelectorAll('.hs-form-wrapper').forEach(w => {
-          window.hbspt.forms.create({
-            region: w.dataset.region,
-            portalId: w.dataset.portalId,
-            formId: w.dataset.formId,
-            target: '#' + w.id
-          });
-        });
-      }
-    });
-  <\/script>
-</body>
-</html>`;
-      
-      const fullHtml = head + content + foot;
-      navigator.clipboard.writeText(fullHtml).then(() => alert('完全なHTMLコードをコピーしました！\n.htmlファイルとして保存してください。'));
+  // :root の色変数を抽出
+  const cssVarsMatch = content.match(/<style>[\s\S]*?:root[\s\S]*?<\/style>/);
+  const cssVars = cssVarsMatch
+    ? cssVarsMatch[0].replace(/<\/?style>/g, '') // ← 修正ポイント！
+    : '';
+
+  const materialCSS = `
+    /* === Material Banner (FV専用) === */
+    .fv-banner .material-banner__thumb-group {
+      right: 5px !important;
+      top: 0px !important;
+    }
+    .fv-banner .material-banner__thumb-group .d1 {
+      background: #ccc !important;
+      top: 15px !important;
+      right: 20px !important;
+      transform: rotate(8deg) !important;
+    }
+    .fv-banner .material-banner__thumb-group .d2 {
+      background: #eee !important;
+      top: 12px !important;
+      right: 10px !important;
+      transform: rotate(10deg) !important;
+    }
+    .fv-banner .material-banner__thumb-group .main {
+      top: 10px !important;
+      right: 0px !important;
+      transform: rotate(15deg) !important;
+      width: 100px;
+      height: 70px;
     }
 
-    render(); renderEditor();
-  </script>
+    /* === Material Banner (中間・最後 CTA 共通) === */
+    .material-banner {
+      display: flex;
+      align-items: center;
+      position: relative;
+      padding: 18px 24px;
+      border-radius: 16px;
+      background: linear-gradient(90deg, #ff72d2, #6a5bff);
+      color: white;
+      text-decoration: none;
+      overflow: visible;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .material-banner__icon { display:none !important; }
+    .material-banner { margin-bottom: 0 !important; }
+
+    .material-banner__text .line1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffe54a;
+    }
+    .material-banner__text .line2 {
+      font-size: 24px;
+      font-weight: 800;
+      display: block;
+      margin-top: 6px;
+    }
+
+    .material-banner__thumb-group {
+      position: absolute;
+      right: -20px;
+      top: -10px;
+      width: 160px;
+      height: 120px;
+      pointer-events: none;
+    }
+    .material-banner__thumb-group .d1 {
+      background: #ccc;
+      top: 15px;
+      right: 20px;
+      transform: rotate(15deg);
+    }
+    .material-banner__thumb-group .d2 {
+      background: #eee;
+      top: 12px;
+      right: 10px;
+      transform: rotate(18deg);
+    }
+    .material-banner__thumb-group .main {
+      top: 10px;
+      right: 0px;
+      transform: rotate(20deg);
+      width: 100px;
+      height: 70px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    .cta-main-button {
+      display: block;
+      width: 100%;
+      max-width: 420px;
+      margin: 0;
+      text-align: left; /* ← 中間・最後CTA 左寄せ */
+    }
+  `;
+
+  const head = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Landing Page</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+body { font-family:'Inter','Noto Sans JP',sans-serif; }
+
+/* marquee animation */
+@keyframes marquee {0%{transform:translateX(0);}100%{transform:translateX(-50%);} }
+.animate-marquee { animation: marquee 25s linear infinite; }
+
+/* Material Banner */
+${materialCSS}
+
+/* global vars (colors) */
+${cssVars}
+</style>
+<script src="//js-na2.hsforms.net/forms/embed/v2.js"></script>
+</head>
+<body>`;
+
+  const foot = `
+<script>
+window.addEventListener('load', function() {
+  if(window.hbspt) {
+    document.querySelectorAll('.hs-form-wrapper').forEach(w => {
+      window.hbspt.forms.create({
+        region:w.dataset.region,
+        portalId:w.dataset.portalId,
+        formId:w.dataset.formId,
+        target:'#'+w.id
+      });
+    });
+  }
+});
+</script>
+</body>
+</html>`;
+
+  const fullHtml = head + content + foot;
+
+  navigator.clipboard.writeText(fullHtml).then(() => {
+    alert('完全なHTMLをコピーしました！');
+  });
+}
+  render(); renderEditor();
+</script>
 </body>
 </html>
