@@ -1315,31 +1315,6 @@
     /* Animation for Marquee */
     @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
     .animate-marquee { animation: marquee 25s linear infinite; }
-    
-    /* Material Banner Styles */
-    .material-banner {
-      display: flex; align-items: center; background: #ffffff;
-      border: 1px solid #e2e8f0; border-radius: 12px;
-      padding: 12px 16px; text-decoration: none; color: #334155;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: all 0.2s ease;
-      max-width: 360px; margin: 0 auto; position: relative; overflow: hidden;
-    }
-    .material-banner:hover {
-      transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #cbd5e1;
-    }
-    .material-banner__icon {
-      width: 32px; height: 32px; background: #f1f5f9; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; color: #94a3b8; margin-right: 12px; flex-shrink: 0;
-    }
-    .material-banner__text { text-align: left; flex: 1; padding-right: 12px; }
-    .material-banner__text .line1 { display: block; font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 2px; letter-spacing: 0.05em; }
-    .material-banner__text .line2 { display: block; font-size: 13px; font-weight: bold; color: #0f172a; line-height: 1.4; }
-    .material-banner__thumb-group { position: relative; width: 32px; height: 42px; flex-shrink: 0; }
-    .material-banner__thumb-group .thumb { position: absolute; border: 1px solid #e2e8f0; background: white; border-radius: 2px; }
-    .material-banner__thumb-group .d1 { width: 28px; height: 36px; right: 4px; bottom: 4px; background: #f1f5f9; z-index: 1; }
-    .material-banner__thumb-group .d2 { width: 28px; height: 36px; right: 2px; bottom: 2px; background: #fff; transform: rotate(-2deg); z-index: 2;}
-    .material-banner__thumb-group .main { width: 28px; height: 36px; right: 0; bottom: 0; z-index: 2; object-fit: cover; box-shadow: -2px 2px 4px rgba(0,0,0,0.1); }
   </style>
   ${cssVars}
   <script src="//js-na2.hsforms.net/forms/embed/v2.js"><\/script>
