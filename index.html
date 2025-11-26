@@ -1443,13 +1443,15 @@ window.addEventListener('load', function() {
 </body>
 </html>`;
 
-  const fullHtml = head + content + foot;
+    const fullHtml = head + content + foot;
 
   navigator.clipboard.writeText(fullHtml).then(() => {
     alert('完全なHTMLをコピーしました！');
   });
 }
-  render(); renderEditor();
-</script>
+
+render();
+renderEditor();
+  </script>
 </body>
 </html>
