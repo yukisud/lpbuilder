@@ -68,82 +68,105 @@
     .panel-card { background: #1e293b; border: 1px solid #334155; padding: 12px; border-radius: 6px; margin-bottom: 8px; }
 
     /* --- Material Banner Styles (Added) --- */
+    /* --- 完成版 Material Banner Styles --- */
+
+    /* バナー本体 */
     .material-banner {
       display: flex;
       align-items: center;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 12px 16px;
-      text-decoration: none;
-      color: #334155;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-      transition: all 0.2s ease;
-      max-width: 360px;
-      margin: 0 auto;
       position: relative;
-      overflow: hidden;
+      padding: 18px 20px;
+      border-radius: 12px;
+      background: linear-gradient(90deg, #ff72d2, #6a5bff);
+      color: white;
+      text-decoration: none;
+      overflow: visible;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      margin-bottom: 40px;
     }
+    
     .material-banner:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-      border-color: #cbd5e1;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
     }
+    
+    /* 左の丸アイコン */
     .material-banner__icon {
-      width: 32px; height: 32px;
-      background: #f1f5f9;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; color: #94a3b8;
-      margin-right: 12px;
-      flex-shrink: 0;
-    }
-    .material-banner__text {
-      text-align: left;
-      flex: 1;
-      padding-right: 12px;
-    }
-    .material-banner__text .line1 {
-      display: block;
-      font-size: 10px;
-      color: #64748b;
-      font-weight: bold;
-      margin-bottom: 2px;
-      letter-spacing: 0.05em;
-    }
-    .material-banner__text .line2 {
-      display: block;
-      font-size: 13px;
-      font-weight: bold;
-      color: #0f172a;
-      line-height: 1.4;
-    }
-    .material-banner__thumb-group {
-      position: relative;
-      width: 32px;
+      width: 42px;
       height: 42px;
-      flex-shrink: 0;
+      border-radius: 50%;
+      background: white;
+      color: #7a36ff;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-right: 18px;
     }
+    
+    /* テキスト */
+    .material-banner__text .line1 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffe54a;
+    }
+    
+    .material-banner__text .line2 {
+      font-size: 22px;
+      font-weight: 800;
+      display: block;
+      margin-top: 4px;
+    }
+    
+    /* --- 資料画像（3枚重ね） --- */
+    .material-banner__thumb-group {
+      position: absolute;
+      right: -10px;
+      top: -20px;
+      width: 260px;
+      height: 180px;
+      pointer-events: none;
+    }
+    
+    /* 共通スタイル */
     .material-banner__thumb-group .thumb {
       position: absolute;
-      border: 1px solid #e2e8f0;
-      background: white;
-      border-radius: 2px;
+      width: 140px;
+      height: 95px;
+      border-radius: 6px;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
     }
+    
+    /* ダミー1（ほんの少し後ろに見える） */
     .material-banner__thumb-group .d1 {
-      width: 28px; height: 36px;
-      right: 4px; bottom: 4px;
-      background: #f1f5f9;
-      z-index: 1;
+      background: #ddd;
+      transform: rotate(-6deg);
+      top: 20px;
+      right: 52px;
     }
+    
+    /* ダミー2（さらに控えめ） */
+    .material-banner__thumb-group .d2 {
+      background: #fff;
+      transform: rotate(-2deg);
+      top: 10px;
+      right: 40px;
+    }
+    
+    /* 一番上の本物の画像 */
     .material-banner__thumb-group .main {
-      width: 28px; height: 36px;
-      right: 0; bottom: 0;
-      z-index: 2;
+      width: 160px;
+      height: 110px;
+      transform: rotate(3deg);
+      top: 5px;
+      right: 10px;
+      border-radius: 7px;
       object-fit: cover;
-      box-shadow: -2px 2px 4px rgba(0,0,0,0.1);
     }
-
 
     /* --- HubSpot Form Styling (Strict Override) --- */
     .hs-form { margin: 0 !important; padding: 0 !important; width: 100% !important; }
