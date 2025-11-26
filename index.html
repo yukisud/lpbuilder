@@ -75,8 +75,8 @@
       display: flex;
       align-items: center;
       position: relative;
-      padding: 18px 24px;
-      border-radius: 16px;
+      padding: 18px 20px;
+      border-radius: 12px;
       background: linear-gradient(90deg, #ff72d2, #6a5bff);
       color: white;
       text-decoration: none;
@@ -93,78 +93,80 @@
     
     /* 左の丸アイコン */
     .material-banner__icon {
-      width: 48px;
-      height: 48px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       background: white;
       color: #7a36ff;
-      font-size: 22px;
+      font-size: 18px;
       font-weight: bold;
       display: flex;
       justify-content: center;
       align-items: center;
-      margin-right: 20px;
+      margin-right: 18px;
     }
     
-    /* テキスト（フォントサイズ調整） */
+    /* テキスト */
     .material-banner__text .line1 {
-      font-size: 18px;
+      font-size: 15px;
       font-weight: 700;
       color: #ffe54a;
     }
     
     .material-banner__text .line2 {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 800;
       display: block;
-      margin-top: 6px;
+      margin-top: 4px;
     }
     
     /* --- 資料画像（3枚重ね） --- */
     .material-banner__thumb-group {
       position: absolute;
-      right: -20px;
-      top: -10px;
-      width: 160px;
-      height: 120px;
+      right: -10px;
+      top: -20px;
+      width: 260px;
+      height: 180px;
       pointer-events: none;
     }
     
     /* 共通スタイル */
     .material-banner__thumb-group .thumb {
       position: absolute;
-      width: 100px;
-      height: 70px;
+      width: 140px;
+      height: 95px;
       border-radius: 6px;
-      object-fit: cover;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
       background-size: cover;
       background-position: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
     }
     
-    /* 一番上（本物） */
-    .material-banner__thumb-group .main {
-      top: 10px;
-      right: 0px;
-      transform: rotate(3deg);
-    }
-    
-    /* 2番目（中） */
-    .material-banner__thumb-group .d2 {
-      background: #eee;
-      top: 12px;
-      right: 10px;
-      transform: rotate(-1deg);
-    }
-    
-    /* 一番下（奥） */
+    /* ダミー1（ほんの少し後ろに見える） */
     .material-banner__thumb-group .d1 {
-      background: #ccc;
-      top: 15px;
-      right: 20px;
-      transform: rotate(-4deg);
+      background: #ddd;
+      transform: rotate(-6deg);
+      top: 20px;
+      right: 52px;
     }
-
+    
+    /* ダミー2（さらに控えめ） */
+    .material-banner__thumb-group .d2 {
+      background: #fff;
+      transform: rotate(-2deg);
+      top: 10px;
+      right: 40px;
+    }
+    
+    /* 一番上の本物の画像 */
+    .material-banner__thumb-group .main {
+      width: 160px;
+      height: 110px;
+      transform: rotate(3deg);
+      top: 5px;
+      right: 10px;
+      border-radius: 7px;
+      object-fit: cover;
+    }
 
     /* --- HubSpot Form Styling (Strict Override) --- */
     .hs-form { margin: 0 !important; padding: 0 !important; width: 100% !important; }
@@ -543,10 +545,16 @@
     function renderMaterialBanner(subText, subUrl) {
       const g = lpData.global;
       const thumb = g.materialThumb || 'https://placehold.co/300x400?text=DOC';
+    
       const lead = g.materialLeadText || '詳しく知りたい方';
     
+      const gradStart = g.materialBackgroundStart || '#ff72d2';
+      const gradEnd = g.materialBackgroundEnd || '#6a5bff';
+    
       return `
-        <a href="${subUrl}" class="material-banner">
+        <a href="${subUrl}" class="material-banner"
+           style="background: linear-gradient(90deg, ${gradStart}, ${gradEnd});">
+    
           <div class="material-banner__icon">▶</div>
     
           <div class="material-banner__text">
@@ -555,14 +563,14 @@
           </div>
     
           <div class="material-banner__thumb-group">
-            <div class="thumb d1"></div>
-            <div class="thumb d2"></div>
-            <img src="${thumb}" class="thumb main" />
+            <div class="thumb dummy d1"></div>
+            <div class="thumb dummy d2"></div>
+            <img src="${thumb}" class="thumb main">
           </div>
+    
         </a>
       `;
     }
-
 
 
     function renderBtnGroup(mainText, mainUrl, showSub, subText, subUrl, microCopy) {
@@ -696,34 +704,21 @@
     }
 
     function tplCtaMiddle(d) {
-      const bg = d.bgImage 
-        ? `background-image: url('${d.bgImage}'); background-size: cover;` 
-        : 'background: linear-gradient(135deg, #1e3a8a, #2563eb);';
-    
+      const bg = d.bgImage ? `background-image: url('${d.bgImage}'); background-size: cover;` : 'background: linear-gradient(135deg, #1e3a8a, #2563eb);';
       const overlay = d.bgImage ? '<div class="absolute inset-0 bg-slate-900/80"></div>' : '';
-    
+      
+      const buttons = renderBtnGroup(d.btnText, d.btnUrl, d.showSubCta, d.subCtaText, d.subCtaUrl, d.microCopy);
+
       return `
         <section class="py-20 relative text-white text-center overflow-hidden" style="${bg}">
           ${overlay}
           <div class="container mx-auto px-6 relative z-10 flex flex-col items-center">
-    
             <h2 class="text-3xl md:text-4xl font-bold mb-6 leading-tight">${d.title}</h2>
             <p class="text-blue-100 mb-8 max-w-2xl text-lg">${d.desc}</p>
-    
-            <div class="bg-white/95 backdrop-blur rounded-xl p-8 w-full max-w-4xl text-gray-800 shadow-2xl 
-                flex flex-col gap-8 md:flex-col md:items-center">
-    
-              <div class="w-full flex justify-center">
-                ${renderMaterialBanner(d.subCtaText, d.subCtaUrl)}
-              </div>
-    
-              <a href="${d.btnUrl}" 
-                 class="btn-main px-8 py-4 rounded-lg text-white font-bold text-lg shadow-lg block w-full md:w-auto mx-auto">
-                ${d.btnText}
-              </a>
-    
+            <div class="w-full max-w-4xl text-gray-800">
+               ${buttons}
             </div>
-    
+
           </div>
         </section>
       `;
