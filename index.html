@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LP Builder v21</title>
+  
+  <!-- Google Fonts (CSSは静的読み込みでも比較的安全ですが、念のため) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <!-- 
+    GAS Web App (iframe sandbox) 対応:
+    外部スクリプトは動的にロードしないとブロックされる場合があるため修正 
+  -->
+  <script>
+    // 1. Tailwind CSS Dynamic Load
+    (function(){
+      var s = document.createElement('script');
+      s.src = "https://cdn.tailwindcss.com";
+      // Tailwind Config
+      s.onload = function() {
+        tailwind.config = {
+          theme: {
+            extend: {
+              fontFamily: { sans: ['Inter', 'Noto Sans JP', 'sans-serif'] },
+              animation: { marquee: 'marquee 25s linear infinite' },
+              keyframes: { marquee: { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } } }
+            }
+          }
+        };
+      };
+      document.head.appendChild(s);
+    })();
+
+    // 2. Phosphor Icons Dynamic Load
+    (function(){
+      var s = document.createElement('script');
+      s.src = "https://unpkg.com/@phosphor-icons/web";
+      document.head.appendChild(s);
+    })();
+  </script>
+
+  <style>
+    /* --- Base UI --- */
+    body { margin: 0; overflow: hidden; background-color: #0f172a; color: #f8fafc; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    
+    /* --- Preview Area --- */
+    #preview-area {
+      background-color: #f1f5f9;
+      background-image: linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    #canvas {
+      min-height: 100vh;
+      background: white;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      padding-bottom: 120px; /* SP固定ボタン用余白 */
+    }
+
+    /* --- Editor UI --- */
+    .editable-section { position: relative; border: 2px solid transparent; transition: all 0.2s; }
+    .editable-section:hover::after { content: ""; position: absolute; inset: 0; border: 2px dashed #3b82f6; pointer-events: none; z-index: 40; }
+    .editable-section.active::after { content: ""; position: absolute; inset: 0; border: 3px solid #2563eb; z-index: 40; }
+    
+    .editor-input, .editor-select, .editor-textarea {
+      background: #1e293b; border: 1px solid #334155; color: white; 
+      font-size: 13px; border-radius: 4px; padding: 8px; width: 100%; transition: 0.2s;
+    }
+    .editor-input:focus, .editor-select:focus, .editor-textarea:focus { 
+      outline: none; border-color: #60a5fa; ring: 1px solid #60a5fa; 
+    }
+    .editor-label { display: block; font-size: 11px; font-weight: bold; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
+    .panel-card { background: #1e293b; border: 1px solid #334155; padding: 12px; border-radius: 6px; margin-bottom: 8px; }
+
+    /* --- HubSpot Override --- */
+    .hbspt-form, .hs-form-wrapper { width: 100%; }
+    .hbspt-form fieldset { max-width: 100% !important; margin-bottom: 1rem !important; }
+    .hbspt-form .hs-form-field { margin-bottom: 12px !important; }
+    .hbspt-form label { display: block; font-size: 13px; font-weight: bold; color: #374151; margin-bottom: 4px; }
+    .hbspt-form .hs-input, .hbspt-form textarea, .hbspt-form select {
+      width: 100% !important; padding: 12px !important; 
+      border: 1px solid #d1d5db !important; border-radius: 8px !important;
+      background-color: #f9fafb !important; font-size: 14px !important; color: #111827 !important;
+      box-sizing: border-box !important;
+    }
+    .hbspt-form .hs-button {
+      width: 100% !important; margin-top: 10px !important;
+      font-weight: bold !important; padding: 14px !important;
+      border-radius: 8px !important; border: none !important; cursor: pointer !important;
+      font-size: 16px !important; text-align: center !important;
+    }
+
+    /* --- Bubble Arrow --- */
+    .bubble-arrow {
+      position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+      width: 0; height: 0; 
+      border-left: 6px solid transparent; border-right: 6px solid transparent;
+      border-top: 6px solid #fbbf24; /* yellow-400 */
+    }
+  </style>
+</head>
+<body class="flex h-screen">
+
+  <!-- Left: Preview -->
+  <div id="preview-area" class="flex-1 overflow-y-auto p-0 md:p-8 flex justify-center items-start">
+    <div id="canvas-wrapper" class="w-full max-w-[1280px]">
+      <div id="canvas" class="text-slate-900 bg-white relative"></div>
+    </div>
+  </div>
+
+  <!-- Right: Editor -->
+  <div class="w-[380px] bg-slate-900 border-l border-slate-700 flex flex-col shadow-2xl z-50 flex-shrink-0">
+    <div class="h-14 border-b border-slate-700 flex items-center justify-between px-4 bg-slate-800">
+      <div class="font-bold text-white flex items-center gap-2">
+        <i class="ph-fill ph-paint-brush-broad text-blue-500"></i> LP Builder v21
+      </div>
+      <button onclick="exportHtml()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-1 transition">
+        <i class="ph-bold ph-code"></i> 書出し
+      </button>
+    </div>
+
+    <div class="flex border-b border-slate-700 bg-slate-800/50">
+      <button onclick="switchTab('global')" id="tab-global" class="flex-1 py-3 text-xs font-bold text-slate-400 border-b-2 border-transparent">全体設定</button>
+      <button onclick="switchTab('section')" id="tab-section" class="flex-1 py-3 text-xs font-bold text-blue-500 border-b-2 border-blue-500">セクション編集</button>
+    </div>
+
+    <div id="editor-content" class="flex-1 overflow-y-auto p-4 custom-scrollbar"></div>
+
+    <div class="p-4 border-t border-slate-700 bg-slate-800">
+      <p class="text-[10px] font-bold text-slate-500 mb-2 uppercase">セクション追加</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('hero')"><i class="ph ph-image"></i> FV (Hero)</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('cta_middle')"><i class="ph ph-hand-pointing"></i> 中間CTA</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('case_study_detail')"><i class="ph ph-article"></i> 成功事例詳細</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('feature_hero')"><i class="ph ph-monitor"></i> サービス詳細</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('comparison')"><i class="ph ph-scales"></i> 比較表</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('pricing')"><i class="ph ph-currency-yen"></i> 料金</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('contact')"><i class="ph ph-envelope"></i> お問い合わせ</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('achievements')"><i class="ph ph-chart-bar"></i> 実績(3col)</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('flow')"><i class="ph ph-steps"></i> 流れ</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('strengths')"><i class="ph ph-lightning"></i> 強み</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('problem')"><i class="ph ph-warning"></i> 課題</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('agitation')"><i class="ph ph-fire"></i> 危機感</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('logos')"><i class="ph ph-slideshow"></i> ロゴ</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* --- Data & Config --- */
+    const GRADIENTS = [
+      { name: 'Blue', value: 'from-blue-600 to-cyan-400' },
+      { name: 'Purple', value: 'from-indigo-600 to-purple-400' },
+      { name: 'Orange', value: 'from-orange-500 to-red-400' },
+      { name: 'Green', value: 'from-emerald-500 to-teal-400' }
+    ];
+
+    const initialState = {
+      global: {
+        serviceName: 'NextVision',
+        companyName: 'NextVision Inc.',
+        logoUrl: '',
+        ctaText: 'お問い合わせ',
+        ctaUrl: '#contact',
+        subCtaTextSp: '資料請求', 
+        subCtaUrlSp: '#',
+        primaryColor: '#2563eb', // Blue-600
+        secondaryColor: '#f97316' // Orange-500
+      },
+      sections: [
+        {
+          id: 's1', type: 'hero',
+          data: {
+            tagline: 'AI Powered Business Analytics',
+            title: 'ビジネスの未来を、<br>データで加速させる。',
+            desc: '直感だけでなく、確かなデータに基づいた意思決定を。NextVisionは、最新のAI技術で成長戦略を可視化します。',
+            userCount: '2,000社以上',
+            bgImage: '',
+            formCode: '',
+            layout: 'split',
+            showSubCta: true, subCtaText: '資料請求はこちら', subCtaUrl: '#',
+            microCopy: '簡単30秒'
+          }
+        },
+        {
+          id: 's2', type: 'logos',
+          data: { 
+            title: '導入実績 500社以上', 
+            items: [
+              'https://placehold.co/200x80/e2e8f0/94a3b8?text=Logo+1',
+              'https://placehold.co/200x80/e2e8f0/94a3b8?text=Logo+2',
+              'https://placehold.co/200x80/e2e8f0/94a3b8?text=Logo+3',
+              'https://placehold.co/200x80/e2e8f0/94a3b8?text=Logo+4'
+            ] 
+          }
+        },
+        {
+          id: 's3', type: 'problem',
+          data: {
+            title: 'こんな課題、抱えていませんか？',
+            items: [
+              { title: 'データが散在', desc: 'ツールがバラバラで管理が煩雑。' },
+              { title: '属人的な運営', desc: 'スタッフの経験と勘頼みになっている。' },
+              { title: '集患の停滞', desc: '広告を出しても効果が見えにくい。' }
+            ]
+          }
+        },
+        {
+          id: 's4', type: 'agitation',
+          data: {
+            title: '「2025年の崖」は、<br>もう目の前に迫っています。',
+            desc: 'デジタル化の遅れは、そのまま経営リスクに直結します。<br>今、データを武器に変えなければ、競争から脱落する未来が待っています。',
+            badge: '必要なのは、誰でも使える「データ経営」の仕組み'
+          }
+        },
+        {
+          id: 's5', type: 'feature_hero',
+          data: {
+            subTitle: 'Service',
+            title: '複雑なデータを、<br>シンプルな意思決定へ。',
+            desc: '社内に散らばるあらゆるデータをAPIで自動連携。AIが自動で分析を行い、「次に何をすべきか」をダッシュボードに表示します。',
+            checklist: ['主要SaaSとワンクリック連携', 'AIによる予実管理', 'レポート自動生成'],
+            image: ''
+          }
+        },
+        {
+          id: 's6', type: 'case_study_detail',
+          data: {
+            title: '導入成功事例',
+            items: [
+              {
+                name: 'A歯科医院',
+                headline: '自費診療の売上が1.5倍に増加',
+                desc: '予約の空き状況をAIが分析し、最適なタイミングでリマインドを送ることでキャンセル率が激減しました。',
+                image1: '', image2: '',
+                graphType: 'bar',
+                metric: { label: '売上', before: 300, after: 450, unit: '万円' }
+              }
+            ]
+          }
+        },
+        {
+          id: 's7', type: 'comparison',
+          data: {
+            title: '従来手法との比較',
+            cols: ['自社 (NextVision)', '大手BIツール', 'Excel管理'],
+            rows: [
+              { label: '導入コスト', values: ['月額 3万円~', '数千万円~', '0円 (人件費大)'] },
+              { label: '導入期間', values: ['最短即日', '半年以上', '-'] }
+            ]
+          }
+        },
+        {
+          id: 's8', type: 'cta_middle',
+          data: {
+            title: 'まずは無料デモで、<br>その効果を体感してください',
+            desc: 'わずか30秒で登録完了。クレジットカード登録も不要です。',
+            btnText: '無料で試してみる',
+            btnUrl: '#contact',
+            bgImage: '',
+            microCopy: '30秒で登録完了',
+            showSubCta: true, subCtaText: '資料請求はこちら', subCtaUrl: '#'
+          }
+        },
+        {
+          id: 's9', type: 'achievements',
+          data: {
+            title: '実績データ',
+            items: [
+              { name: 'A社', metric: 'コスト削減', before: 100, after: 40, unit: '万' },
+              { name: 'B社', metric: '成約数', before: 10, after: 35, unit: '件' }
+            ]
+          }
+        },
+        {
+          id: 's10', type: 'flow',
+          data: {
+            title: '導入までの流れ',
+            steps: [
+              { title: '資料請求・お問い合わせ', desc: 'まずはフォームよりご連絡ください。' },
+              { title: '無料デモ・ヒアリング', desc: '実際の画面をご覧いただきながら課題を整理します。' },
+              { title: 'トライアル開始', desc: '2週間の無料トライアルで効果を実感してください。' },
+              { title: '本契約・運用開始', desc: '専任スタッフがオンボーディングを支援します。' }
+            ]
+          }
+        },
+        {
+          id: 's11', type: 'pricing',
+          data: {
+            title: '料金プラン',
+            desc: '初期費用0円。',
+            plans: [
+              { name: 'Starter', price: '30,000', note: '小規模向け', features: 'ユーザー5名\n基本機能', highlight: false },
+              { name: 'Standard', price: '80,000', note: '成長企業向け', features: 'ユーザー20名\nAPI連携', highlight: true }
+            ]
+          }
+        },
+        {
+          id: 's12', type: 'faq',
+          data: {
+            title: 'よくあるご質問',
+            items: [{ q: '無料トライアルはありますか？', a: 'はい、2週間無料でお試しいただけます。' }]
+          }
+        },
+        {
+          id: 's13', type: 'contact',
+          data: {
+            title: 'ビジネスの成長を、<br>これ以上待つ必要はありません。',
+            desc: '今すぐNextVisionで、データドリブンな経営へ。',
+            formCode: '',
+            microCopy: '簡単30秒',
+            showSubCta: true, subCtaText: '資料請求はこちら', subCtaUrl: '#'
+          }
+        }
+      ]
+    };
+
+    let lpData = JSON.parse(JSON.stringify(initialState));
+    let activeId = 's1';
+    let currentTab = 'section';
+
+    /* --- Rendering --- */
+
+    function render() {
+      const canvas = document.getElementById('canvas');
+      const g = lpData.global;
+      let html = '';
+
+      // CSS Injection for Dynamic Colors
+      const cssVars = `
+        <style>
+          :root {
+            --color-primary: ${g.primaryColor};
+            --color-secondary: ${g.secondaryColor};
+          }
+          .bg-primary { background-color: var(--color-primary) !important; }
+          .text-primary { color: var(--color-primary) !important; }
+          .border-primary { border-color: var(--color-primary) !important; }
+          .bg-secondary { background-color: var(--color-secondary) !important; }
+          .text-secondary { color: var(--color-secondary) !important; }
+          
+          .btn-main { background-color: var(--color-primary) !important; color: white !important; }
+          .btn-main:hover { opacity: 0.9; }
+          
+          /* 資料請求ボタン (サブCTA) - ボタンデザイン化 (枠なし白背景 or 枠あり白) */
+          /* FV/Middle用: 白背景・シャドウ・枠なし */
+          .btn-sub { 
+            background-color: white !important; 
+            color: var(--color-secondary) !important; 
+            border: none !important; 
+            text-decoration: none !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+          }
+          .btn-sub:hover { background-color: #fff7ed !important; transform: translateY(-1px); }
+
+          /* SP Sticky Sub Button (Bordered) */
+          .btn-sub-sticky {
+            background-color: white !important;
+            color: var(--color-secondary) !important;
+            border: 2px solid var(--color-secondary) !important;
+            text-decoration: none !important;
+          }
+          
+          .bubble-box { background-color: #fbbf24; color: black; }
+          .bubble-arrow { border-top-color: #fbbf24; }
+
+          /* HubSpot Overrides */
+          .hbspt-form .hs-button { background-color: var(--color-primary) !important; }
+        </style>
+      `;
+      html += cssVars;
+
+      // Header
+      const logoContent = g.logoUrl 
+        ? `<img src="${g.logoUrl}" alt="${g.serviceName}" class="h-8 w-auto object-contain">` 
+        : `<div class="flex items-center gap-2 font-bold text-xl text-gray-900"><div class="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center">N</div>${g.serviceName}</div>`;
+
+      html += `
+        <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100">
+          <div class="container mx-auto px-6 h-16 flex justify-between items-center">
+            ${logoContent}
+            <nav class="hidden md:flex gap-6 text-sm font-medium text-gray-600">
+               <a href="#" class="hover:text-primary transition">機能</a>
+               <a href="#" class="hover:text-primary transition">事例</a>
+               <a href="#" class="hover:text-primary transition">料金</a>
+            </nav>
+            <a href="${g.ctaUrl}" class="hidden md:inline-flex px-5 py-2 rounded-full text-sm font-bold shadow-lg btn-main transition">
+              ${g.ctaText}
+            </a>
+          </div>
+        </header>
+      `;
+
+      // Sections
+      lpData.sections.forEach(sec => {
+        const isActive = sec.id === activeId ? 'active' : '';
+        html += `<div class="editable-section ${isActive}" onclick="selectSection('${sec.id}')">`;
+        switch(sec.type) {
+          case 'hero': html += tplHero(sec.data, sec.id); break;
+          case 'logos': html += tplLogos(sec.data); break;
+          case 'cta_middle': html += tplCtaMiddle(sec.data); break;
+          case 'feature_hero': html += tplFeatureHero(sec.data); break;
+          case 'case_study_detail': html += tplCaseStudyDetail(sec.data); break;
+          case 'comparison': html += tplComparison(sec.data); break;
+          case 'strengths': html += tplStrengths(sec.data); break;
+          case 'achievements': html += tplAchievements(sec.data); break;
+          case 'pricing': html += tplPricing(sec.data); break;
+          case 'faq': html += tplFaq(sec.data); break;
+          case 'contact': html += tplContact(sec.data, sec.id); break;
+          case 'problem': html += tplProblem(sec.data); break;
+          case 'agitation': html += tplAgitation(sec.data); break;
+          case 'flow': html += tplFlow(sec.data); break;
+        }
+        html += `</div>`;
+      });
+
+      // Footer
+      html += `
+        <footer class="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
+          <div class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="font-bold text-white text-lg">${g.serviceName}</div>
+            <div class="text-xs">© 2025 ${g.companyName} All rights reserved.</div>
+          </div>
+        </footer>
+      `;
+
+      // SP Sticky Button (2 Buttons, pb-4 = 1rem)
+      html += `
+        <div class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 shadow-2xl z-50 flex gap-2 pb-4">
+           <a href="${g.subCtaUrlSp}" class="flex-1 py-3 rounded-lg font-bold text-center shadow-lg btn-sub-sticky text-sm flex items-center justify-center">
+             ${g.subCtaTextSp}
+           </a>
+           <a href="${g.ctaUrl}" class="flex-1 py-3 rounded-lg font-bold text-center shadow-lg btn-main text-sm flex items-center justify-center">
+             ${g.ctaText}
+           </a>
+        </div>
+      `;
+
+      canvas.innerHTML = html;
+      loadHubSpotScripts();
+    }
+
+    /* --- Helper: Buttons & Layout --- */
+    function renderBtnGroup(mainText, mainUrl, showSub, subText, subUrl, microCopy) {
+      // マイクロコピー: relative配置 (中央寄せ)
+      const bubble = microCopy ? `
+        <div class="relative inline-flex items-center justify-center bubble-box text-xs font-bold px-4 py-1.5 rounded-full shadow-md animate-bounce whitespace-nowrap mb-2">
+           ${microCopy}
+           <div class="bubble-arrow" style="position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid #fbbf24;"></div>
+        </div>` : '';
+
+      const sub = showSub ? `
+        <div class="flex flex-col items-center w-full md:w-auto relative">
+           <p class="text-xs text-white/90 mb-3 whitespace-nowrap">まずは資料だけ見たい方</p>
+           <a href="${subUrl}" class="block w-full md:w-64 py-4 rounded-lg font-bold text-center shadow-lg btn-sub text-lg border-0">${subText}</a>
+        </div>
+      ` : '';
+
+      const main = `
+        <div class="flex flex-col items-center w-full md:w-auto relative">
+           ${bubble}
+           <a href="${mainUrl}" class="block w-full md:w-64 py-4 rounded-lg font-bold text-center shadow-lg transition btn-main text-lg relative z-0 border-2 border-white/20">
+             ${mainText}
+           </a>
+        </div>
+      `;
+
+      return `
+        <div class="flex flex-col md:flex-row items-end justify-center gap-8 md:gap-12 mt-12 w-full">
+           ${sub}
+           ${main}
+        </div>
+      `;
+    }
+
+    /* --- HubSpot --- */
+    // 3. Dynamic HubSpot Loader Function
+    function loadHubSpotScripts() {
+      if (window.hbspt) {
+        runHubSpotEmbeds();
+        return;
+      }
+      var s = document.createElement("script");
+      s.src = "//js-na2.hsforms.net/forms/embed/v2.js";
+      s.onload = function() { runHubSpotEmbeds(); };
+      document.body.appendChild(s);
+    }
+
+    function runHubSpotEmbeds() {
+      if (!window.hbspt) return;
+      document.querySelectorAll('.hs-form-wrapper').forEach(w => {
+        const portalId = w.dataset.portalId;
+        const formId = w.dataset.formId;
+        const region = w.dataset.region || 'na1';
+        if (portalId && formId) {
+          w.innerHTML = ''; 
+          window.hbspt.forms.create({ region, portalId, formId, target: '#' + w.id });
+        }
+      });
+    }
+    function parseHubSpotCode(code) {
+      if (!code) return null;
+      const p = code.match(/portalId:\s*["']?(\d+)["']?/);
+      const f = code.match(/formId:\s*["']?([a-zA-Z0-9-]+)["']?/);
+      const r = code.match(/region:\s*["']?([a-zA-Z0-9]+)["']?/);
+      if (p && f) return { portalId: p[1], formId: f[1], region: r ? r[1] : 'na1' };
+      return null;
+    }
+
+    /* --- Templates --- */
+
+    function tplHero(d, id) {
+      const bgStyle = d.bgImage ? `background-image: url('${d.bgImage}'); background-size: cover; background-position: center;` : '';
+      let formHtml = '';
+      const hsData = parseHubSpotCode(d.formCode);
+      if (hsData) formHtml = `<div id="hs-hero-${id}" class="hs-form-wrapper bg-white p-6 rounded-xl shadow-lg border border-gray-100" data-portal-id="${hsData.portalId}" data-form-id="${hsData.formId}" data-region="${hsData.region}"></div>`;
+      else formHtml = `
+        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+           <h3 class="text-lg font-bold text-center mb-4 text-gray-800">無料相談・デモ</h3>
+           <div class="space-y-3">
+             <input type="text" placeholder="会社名" class="w-full bg-gray-50 border border-gray-200 rounded px-3 py-3 text-sm">
+             <input type="email" placeholder="メールアドレス" class="w-full bg-gray-50 border border-gray-200 rounded px-3 py-3 text-sm">
+             <button class="w-full btn-main font-bold py-3 rounded shadow">申し込む</button>
+           </div>
+        </div>`;
+
+      // FV用のサブCTA（ボタンデザイン - py-4にしてメインと高さを揃える）
+      const ctaArea = d.showSubCta ? `
+        <div class="mt-6 text-center">
+          <p class="text-xs text-gray-500 mb-2">まずは資料だけ見たい方はこちら</p>
+          <a href="${d.subCtaUrl}" class="btn-sub text-sm font-bold w-full block text-center shadow-sm py-4">${d.subCtaText}</a>
+        </div>` : '';
+
+      let layoutHtml = '';
+      if (d.layout === 'overlay_box') {
+         layoutHtml = `
+           <div class="container mx-auto px-6 relative z-10 flex justify-end">
+             <div class="bg-white/95 backdrop-blur p-8 rounded-xl shadow-2xl max-w-lg w-full">
+               <div class="inline-block px-3 py-1 bg-blue-50 text-primary rounded-full text-xs font-bold uppercase mb-4 border border-blue-100">${d.tagline}</div>
+               <h1 class="text-3xl font-extrabold text-gray-900 leading-tight mb-4">${d.title}</h1>
+               <p class="text-gray-600 mb-6">${d.desc}</p>
+               ${formHtml}
+               ${ctaArea}
+             </div>
+           </div>
+         `;
+      } else {
+         layoutHtml = `
+           <div class="container mx-auto px-6 relative z-10">
+            <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+              <div class="lg:w-1/2 space-y-6">
+                <div class="inline-block px-3 py-1 bg-blue-50 text-primary rounded-full text-xs font-bold uppercase border border-blue-100">${d.tagline}</div>
+                <h1 class="text-4xl lg:text-6xl font-extrabold tracking-tight leading-tight text-gray-900">${d.title}</h1>
+                <p class="text-lg text-gray-600 leading-relaxed max-w-lg">${d.desc}</p>
+                <div class="flex items-center gap-3 pt-4"><span class="text-sm font-bold text-gray-700">🏆 ${d.userCount} 導入</span></div>
+              </div>
+              <div class="lg:w-1/2 w-full max-w-md mx-auto lg:ml-auto">
+                 ${formHtml}
+                 ${ctaArea}
+              </div>
+            </div>
+           </div>
+         `;
+      }
+
+      return `
+        <section class="relative pt-20 pb-20 lg:pt-32 lg:pb-32 overflow-hidden bg-white" style="${bgStyle}">
+          ${d.layout === 'overlay_box' ? '' : '<div class="absolute top-0 right-0 -mr-20 -mt-20 w-[600px] h-[600px] bg-blue-50 rounded-full blur-3xl opacity-50 z-0 pointer-events-none"></div>'}
+          ${layoutHtml}
+        </section>
+      `;
+    }
+
+    function tplCtaMiddle(d) {
+      const bg = d.bgImage ? `background-image: url('${d.bgImage}'); background-size: cover;` : 'background: linear-gradient(135deg, #1e3a8a, #2563eb);';
+      const overlay = d.bgImage ? '<div class="absolute inset-0 bg-slate-900/80"></div>' : '';
+      
+      // 中間CTA用デザイン: パネル + ボタン均等配置 (renderBtnGroupを利用)
+      const buttons = renderBtnGroup(d.btnText, d.btnUrl, d.showSubCta, d.subCtaText, d.subCtaUrl, d.microCopy);
+
+      return `
+        <section class="py-20 relative text-white text-center overflow-hidden" style="${bg}">
+          ${overlay}
+          <div class="container mx-auto px-6 relative z-10 flex flex-col items-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6 leading-tight">${d.title}</h2>
+            <p class="text-blue-100 mb-8 max-w-2xl text-lg">${d.desc}</p>
+            
+            <!-- 白パネルで囲んで視認性確保 -->
+            <div class="bg-white/95 backdrop-blur rounded-xl p-8 w-full max-w-4xl text-gray-800 shadow-2xl">
+               ${buttons}
+            </div>
+
+          </div>
+        </section>
+      `;
+    }
+
+    function tplCaseStudyDetail(d) {
+      const items = d.items.map(i => {
+        const images = [];
+        if(i.image1) images.push(`<img src="${i.image1}" class="rounded-lg shadow-md w-full h-48 object-cover">`);
+        if(i.image2) images.push(`<img src="${i.image2}" class="rounded-lg shadow-md w-full h-48 object-cover">`);
+        const imgGrid = images.length > 0 ? `<div class="grid grid-cols-${images.length} gap-4 mb-6">${images.join('')}</div>` : '';
+
+        let graphHtml = '';
+        if (i.metric) {
+           const m = i.metric;
+           const max = Math.max(m.before, m.after) * 1.1;
+           if (i.graphType === 'bar') {
+             const hB = (m.before / max) * 100;
+             const hA = (m.after / max) * 100;
+             // グラフ下線削除
+             graphHtml = `
+               <div class="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                 <div class="font-bold text-center text-gray-600 mb-4">${m.label}の推移</div>
+                 <div class="relative h-40 flex items-end justify-center gap-8 px-4">
+                   <div class="flex flex-col justify-end h-full w-16 text-center group">
+                     <div class="text-xs text-gray-400 mb-1">Before</div>
+                     <div class="w-full bg-gray-300 rounded-t transition-all group-hover:bg-gray-400" style="height:${hB}%"></div>
+                     <div class="text-sm font-bold text-gray-600 mt-1">${m.before}</div>
+                   </div>
+                   <div class="flex flex-col justify-end h-full w-16 text-center relative group">
+                     <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded animate-bounce whitespace-nowrap">UP!</div>
+                     <div class="text-xs text-primary mb-1">After</div>
+                     <div class="w-full bg-primary rounded-t shadow-lg" style="height:${hA}%"></div>
+                     <div class="text-xl font-bold text-primary mt-1">${m.after}</div>
+                   </div>
+                 </div>
+                 <div class="text-center text-xs text-gray-400 mt-2">単位: ${m.unit}</div>
+               </div>
+             `;
+           } else {
+             graphHtml = `
+               <div class="mt-6 p-6 bg-gray-50 rounded-xl border border-gray-100 flex flex-col items-center">
+                 <div class="font-bold text-gray-600 mb-4">${m.label}</div>
+                 <div class="w-32 h-32 rounded-full relative shadow-inner" style="background: conic-gradient(var(--color-primary) 0% 70%, #e5e7eb 70% 100%);">
+                    <div class="absolute inset-4 bg-white rounded-full flex items-center justify-center flex-col">
+                       <span class="text-2xl font-bold text-primary">${m.after}${m.unit}</span>
+                       <span class="text-xs text-gray-400">達成</span>
+                    </div>
+                 </div>
+               </div>
+             `;
+           }
+        }
+
+        return `
+          <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-12">
+            <div class="p-8 md:p-12">
+              <div class="flex flex-col md:flex-row gap-10">
+                <div class="md:w-1/2">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 text-primary flex items-center justify-center"><i class="ph-fill ph-buildings text-xl"></i></div>
+                    <span class="font-bold text-gray-500">${i.name}</span>
+                  </div>
+                  <h3 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 leading-tight">${i.headline}</h3>
+                  <p class="text-gray-600 leading-relaxed mb-6">${i.desc}</p>
+                  ${imgGrid}
+                </div>
+                <div class="md:w-1/2 flex flex-col justify-center">
+                   ${graphHtml}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <section class="py-24 bg-white">
+          <div class="container mx-auto px-6 max-w-5xl">
+            <h2 class="text-3xl font-bold text-center text-gray-900 mb-16">${d.title}</h2>
+            <div>${items}</div>
+          </div>
+        </section>
+      `;
+    }
+
+    function tplContact(d, id) {
+      let formHtml = '';
+      const hsData = parseHubSpotCode(d.formCode);
+      if (hsData) formHtml = `<div id="hs-contact-${id}" class="hs-form-wrapper bg-white p-8 rounded-2xl shadow-xl text-gray-800" data-portal-id="${hsData.portalId}" data-form-id="${hsData.formId}" data-region="${hsData.region}"></div>`;
+      else formHtml = `
+         <div class="bg-white p-8 rounded-2xl shadow-xl text-gray-800">
+           <h3 class="text-xl font-bold mb-6 text-center">30秒で簡単入力</h3>
+           <div class="space-y-4">
+             <input type="text" placeholder="会社名" class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200">
+             <input type="email" placeholder="メールアドレス" class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200">
+             <button class="w-full py-4 btn-main font-bold rounded-lg shadow-lg">資料を請求する</button>
+           </div>
+         </div>`;
+
+      const bubble = d.microCopy ? `
+        <div class="relative inline-flex items-center justify-center bubble-box text-xs font-bold px-4 py-1.5 rounded-full shadow-md animate-bounce whitespace-nowrap mb-2">
+           ${d.microCopy}
+           <div class="bubble-arrow" style="position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid #fbbf24;"></div>
+        </div>` : '';
+
+      // 修正: テキスト、吹き出し、ボタンを縦一列 (flex-col) に配置
+      const subBtn = d.showSubCta ? `
+        <div class="mt-12 text-center bg-white/10 p-6 rounded-xl backdrop-blur-sm">
+           <div class="flex flex-col items-center gap-4">
+             <p class="text-blue-100 text-sm">まずは無料資料で内容だけ確認したい方へ</p>
+             <div class="w-full max-w-xs flex flex-col items-center gap-2">
+               ${bubble}
+               <a href="${d.subCtaUrl}" class="block w-full py-4 rounded-lg font-bold text-center shadow-lg btn-sub text-lg border-0">
+                 ${d.subCtaText}
+               </a>
+             </div>
+           </div>
+        </div>
+      ` : '';
+
+      return `
+        <section id="contact" class="py-24 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+          <div class="container mx-auto px-6">
+            <div class="flex flex-col lg:flex-row gap-16 items-start">
+              <div class="lg:w-1/2 pt-10">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6 leading-tight">${d.title}</h2>
+                <p class="text-blue-100 mb-8 text-lg">${d.desc}</p>
+                ${subBtn}
+              </div>
+              <div class="lg:w-1/2 w-full">${formHtml}</div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    /* --- Other Templates --- */
+    function tplFeatureHero(d) {
+      const list = d.checklist.map(item => `<li class="flex items-center gap-3"><i class="ph-fill ph-check-circle text-primary text-xl"></i><span class="text-gray-800 font-medium">${item}</span></li>`).join('');
+      let imgContent = d.image ? `<img src="${d.image}" alt="Service" class="w-full h-auto rounded shadow-lg">` : `<div class="aspect-square bg-gray-100 rounded-3xl flex items-center justify-center text-gray-400 font-bold">NO IMAGE</div>`;
+      return `<section class="py-24 bg-white"><div class="container mx-auto px-6"><div class="flex flex-col md:flex-row items-center gap-16"><div class="md:w-1/2">${imgContent}</div><div class="md:w-1/2 space-y-6"><span class="text-primary font-bold tracking-wider text-sm uppercase">${d.subTitle}</span><h2 class="text-4xl font-bold text-gray-900 leading-tight">${d.title}</h2><p class="text-gray-600 leading-relaxed text-lg">${d.desc}</p><ul class="space-y-4 pt-4">${list}</ul></div></div></div></section>`;
+    }
+    function tplLogos(d) {
+      const items = [...d.items, ...d.items, ...d.items].map(i=>`<img src="${i}" class="h-12 w-auto mx-10 grayscale opacity-70 hover:grayscale-0 transition duration-300 object-contain">`).join('');
+      return `<div class="w-full overflow-hidden bg-gray-50 py-10 border-b border-gray-200"><div class="text-center mb-6 text-xs text-gray-500 tracking-widest font-bold uppercase">${d.title}</div><div class="relative w-full flex overflow-x-hidden"><div class="animate-marquee whitespace-nowrap py-2 flex items-center">${items}</div></div></div>`;
+    }
+    function tplComparison(d) {
+      const headers = d.cols.map((col, i) => `<th class="p-4 ${i===0?'bg-primary text-white':'bg-gray-100 text-gray-700'} font-bold text-center w-1/${d.cols.length+1}">${col}</th>`).join('');
+      const rows = d.rows.map(row => {
+        const cells = row.values.map((val, i) => `<td class="p-4 text-center ${i===0?'bg-blue-50 text-primary font-bold border-x border-blue-100':'text-gray-600'}">${val}</td>`).join('');
+        return `<tr class="border-b border-gray-100 last:border-0"><td class="p-4 font-bold text-gray-700">${row.label}</td>${cells}</tr>`;
+      }).join('');
+      return `<section class="py-24 bg-white"><div class="container mx-auto px-6 max-w-5xl"><h2 class="text-3xl font-bold text-center text-gray-900 mb-12">${d.title}</h2><div class="overflow-x-auto shadow-lg rounded-xl border border-gray-200"><table class="w-full text-left border-collapse min-w-[600px]"><thead><tr><th class="p-4 bg-gray-50 w-1/4"></th>${headers}</tr></thead><tbody>${rows}</tbody></table></div></div></section>`;
+    }
+    function tplStrengths(d) {
+      const items = d.features.map((f,i)=>{
+        const rev=i%2!==0?'md:flex-row-reverse':'md:flex-row';
+        return `<div class="flex flex-col ${rev} items-center gap-10 md:gap-16 py-12 border-b border-gray-100 last:border-0"><div class="w-full md:w-1/2"><div class="aspect-video rounded-2xl bg-gradient-to-br ${f.color} p-1 shadow-lg"><div class="w-full h-full bg-white rounded-xl flex items-center justify-center text-gray-300 font-bold">IMAGE</div></div></div><div class="w-full md:w-1/2"><div class="inline-block px-3 py-1 rounded-full text-xs font-bold text-white mb-4 bg-gradient-to-r ${f.color}">POINT 0${i+1}</div><h3 class="text-2xl font-bold text-gray-900 mb-4">${f.title}</h3><p class="text-gray-600 leading-relaxed">${f.desc}</p></div></div>`;
+      }).join('');
+      return `<section class="py-24 bg-white"><div class="container mx-auto px-6"><div class="text-center mb-16"><span class="text-primary font-bold text-xs tracking-widest uppercase">${d.subTitle}</span><h2 class="text-3xl font-bold text-gray-900 mt-2">${d.mainTitle}</h2></div><div>${items}</div></div></section>`;
+    }
+    function tplPricing(d) {
+      const cards = d.plans.map(p => {
+        const w=p.highlight?'border-2 border-primary shadow-xl relative z-10 scale-105':'border border-gray-200 shadow-sm';
+        const b=p.highlight?'<span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-full">POPULAR</span>':'';
+        const f=p.features.split('\n').map(x=>`<li class="flex items-start gap-2 text-sm text-gray-600"><i class="ph-fill ph-check-circle text-primary mt-0.5"></i>${x}</li>`).join('');
+        return `<div class="bg-white rounded-2xl p-8 flex flex-col ${w}">${b}<h3 class="text-lg font-bold text-gray-800 mb-2">${p.name}</h3><p class="text-xs text-gray-500 mb-6 font-bold">${p.note||''}</p><div class="text-3xl font-bold text-gray-900 mb-6">${p.price}<span class="text-xs text-gray-400 font-normal ml-1">/月</span></div><ul class="space-y-3 mb-4 flex-1">${f}</ul></div>`;
+      }).join('');
+      return `<section class="py-24 bg-slate-50"><div class="container mx-auto px-6"><div class="text-center mb-12"><h2 class="text-3xl font-bold text-gray-900 mb-4">${d.title}</h2><p class="text-gray-500 text-sm max-w-xl mx-auto">${d.desc}</p></div><div class="grid md:grid-cols-${Math.min(d.plans.length,3)} gap-6 max-w-6xl mx-auto items-start">${cards}</div></div></section>`;
+    }
+    function tplProblem(d) {
+      const cards = d.items.map(i=>`<div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center"><div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="ph-fill ph-warning-circle"></i></div><h3 class="font-bold text-lg mb-2 text-gray-800">${i.title}</h3><p class="text-sm text-gray-600">${i.desc}</p></div>`).join('');
+      return `<section class="py-20 bg-gray-50"><div class="container mx-auto px-6"><h2 class="text-3xl font-bold text-center text-gray-900 mb-12">${d.title}</h2><div class="grid md:grid-cols-3 gap-8">${cards}</div></div></section>`;
+    }
+    function tplAgitation(d) {
+      return `<section class="py-24 bg-slate-900 text-white text-center relative overflow-hidden"><div class="absolute inset-0 opacity-10" style="background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');"></div><div class="container mx-auto px-6 relative z-10 max-w-4xl"><h2 class="text-3xl md:text-5xl font-bold mb-8 leading-tight">${d.title}</h2><p class="text-gray-300 text-lg md:text-xl leading-relaxed mb-10">${d.desc}</p><div class="inline-block p-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500"><div class="px-8 py-3 bg-slate-900 rounded-full font-bold text-blue-200">${d.badge}</div></div></div></section>`;
+    }
+    function tplFlow(d) {
+      const s = d.steps.map((x,i)=>`<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative"><div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center font-bold text-xl mb-4 mx-auto md:mx-0 shadow-lg">0${i+1}</div><h3 class="font-bold text-gray-800 mb-2 text-center md:text-left">${x.title}</h3><p class="text-sm text-gray-500 text-center md:text-left">${x.desc}</p></div>`).join('');
+      return `<section class="py-20 bg-gray-50"><div class="container mx-auto px-6"><div class="text-center mb-16"><h2 class="text-3xl font-bold text-gray-900">${d.title}</h2></div><div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">${s}</div></div></section>`;
+    }
+    function tplAchievements(d) {
+      const c = d.items.map(i=>`<div class="bg-white rounded-xl shadow border border-gray-100 p-6 flex flex-col h-full"><div class="flex items-center gap-3 mb-6"><div class="w-10 h-10 rounded-full bg-blue-50 text-primary flex items-center justify-center"><i class="ph-fill ph-buildings text-xl"></i></div><div class="font-bold text-gray-700 text-sm">${i.name}</div></div><div class="flex items-end gap-4 h-32 mt-auto px-2"><div class="w-1/2 flex flex-col justify-end h-full"><div class="text-center text-[10px] text-gray-400 font-bold mb-1">Before</div><div class="w-full bg-gray-200 rounded-t flex justify-center items-end" style="height:${(i.before/Math.max(i.before,i.after)*1.1)*100}%"><span class="text-xs font-bold text-gray-500 mb-1">${i.before}</span></div></div><div class="w-1/2 flex flex-col justify-end h-full relative"><div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">UP!</div><div class="text-center text-[10px] text-primary font-bold mb-1">After</div><div class="w-full bg-gradient-to-t from-blue-600 to-cyan-400 rounded-t flex justify-center items-end" style="height:${(i.after/Math.max(i.before,i.after)*1.1)*100}%"><span class="text-sm font-bold text-white mb-1 shadow-sm">${i.after}${i.unit}</span></div></div></div><div class="text-center text-xs font-bold text-gray-500 border-t pt-3 mt-2">${i.metric}</div></div>`).join('');
+      return `<section class="py-24 bg-white"><div class="container mx-auto px-6"><h2 class="text-3xl font-bold text-center text-gray-900 mb-12">${d.title}</h2><div class="grid md:grid-cols-3 gap-6">${c}</div></div></section>`;
+    }
+    function tplFaq(d) {
+      const i=d.items.map(x=>`<details class="group border border-gray-200 rounded-lg open:bg-gray-50 transition"><summary class="flex justify-between items-center font-bold cursor-pointer list-none p-4 text-gray-800"><span>${x.q}</span><span class="transition group-open:rotate-180"><i class="ph ph-caret-down"></i></span></summary><div class="text-gray-600 text-sm p-4 pt-0 leading-relaxed border-t border-gray-100 mt-2">${x.a}</div></details>`).join('');
+      return `<section class="py-20 bg-white border-t border-gray-100"><div class="container mx-auto px-6 max-w-3xl"><h2 class="text-3xl font-bold text-center mb-12 text-gray-900">${d.title}</h2><div class="space-y-4">${i}</div></div></section>`;
+    }
+
+    /* --- Editor Logic --- */
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const tG = document.getElementById('tab-global');
+      const tS = document.getElementById('tab-section');
+      const active = 'flex-1 py-3 text-xs font-bold text-blue-500 border-b-2 border-blue-500';
+      const inactive = 'flex-1 py-3 text-xs font-bold text-slate-400 border-b-2 border-transparent hover:text-white';
+      if(tab==='global'){tG.className=active; tS.className=inactive;} else {tG.className=inactive; tS.className=active;}
+      renderEditor();
+    }
+
+    function selectSection(id) { activeId = id; switchTab('section'); render(); }
+
+    function renderEditor() {
+      const container = document.getElementById('editor-content');
+      container.innerHTML = '';
+
+      if (currentTab === 'global') {
+        const g = lpData.global;
+        container.innerHTML = `
+          <div class="mb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Global Settings</div>
+          <div class="space-y-4">
+            ${createInput('サービス名', 'global.serviceName', g.serviceName)}
+            ${createInput('会社名 (Footer)', 'global.companyName', g.companyName)}
+            ${createInput('会社ロゴURL', 'global.logoUrl', g.logoUrl)}
+            ${createInput('SP固定ボタン文言', 'global.ctaText', g.ctaText)}
+            ${createInput('リンク', 'global.ctaUrl', g.ctaUrl)}
+            <div class="border-t border-slate-700 pt-4 mt-4">
+              <div class="text-xs font-bold text-blue-400 mb-2">テーマカラー設定</div>
+              ${createColorInput('プライマリー (Main/Brand)', 'global.primaryColor', g.primaryColor)}
+              ${createColorInput('セカンダリー (Accent/Sub)', 'global.secondaryColor', g.secondaryColor)}
+            </div>
+          </div>
+        `;
+      } else {
+        const section = lpData.sections.find(s => s.id === activeId);
+        if (!section) {
+          container.innerHTML = '<p class="text-slate-500 text-center mt-10 text-xs">セクションを選択してください</p>';
+          return;
+        }
+
+        const controls = document.createElement('div');
+        controls.className = 'grid grid-cols-3 gap-2 mb-6 pb-6 border-b border-slate-700';
+        controls.innerHTML = `
+          <button class="bg-slate-800 hover:bg-slate-700 text-white py-2 rounded text-xs font-bold border border-slate-600" onclick="moveSection(-1)">↑ 上へ</button>
+          <button class="bg-slate-800 hover:bg-slate-700 text-white py-2 rounded text-xs font-bold border border-slate-600" onclick="moveSection(1)">↓ 下へ</button>
+          <button class="bg-red-900/30 hover:bg-red-900/50 text-red-400 py-2 rounded text-xs font-bold border border-red-900" onclick="deleteSection()">削除</button>
+        `;
+        container.appendChild(controls);
+
+        const d = section.data;
+
+        if (section.type === 'hero') {
+          // Laurel Removed
+          container.appendChild(createInput('タグライン', 'tagline', d.tagline));
+          container.appendChild(createInput('タイトル', 'title', d.title));
+          container.appendChild(createTextArea('説明文', 'desc', d.desc));
+          container.appendChild(createInput('実績数', 'userCount', d.userCount));
+          container.appendChild(createInput('背景画像URL', 'bgImage', d.bgImage));
+          const layoutSel = document.createElement('div'); layoutSel.className='mb-4';
+          layoutSel.innerHTML = `<label class="editor-label">レイアウト</label><select class="editor-select" onchange="updateValue('layout', this.value)"><option value="split" ${d.layout==='split'?'selected':''}>左右分割</option><option value="overlay_box" ${d.layout==='overlay_box'?'selected':''}>背景画像＋白ボックス</option></select>`;
+          container.appendChild(layoutSel);
+          container.appendChild(createTextArea('HubSpotフォームコード', 'formCode', d.formCode));
+          container.appendChild(createSubCtaEditor(d));
+        }
+        else if (section.type === 'cta_middle') {
+          container.appendChild(createInput('タイトル', 'title', d.title));
+          container.appendChild(createTextArea('説明文', 'desc', d.desc));
+          container.appendChild(createInput('メインボタン文言', 'btnText', d.btnText));
+          container.appendChild(createInput('メインボタンリンク', 'btnUrl', d.btnUrl));
+          container.appendChild(createInput('背景画像URL', 'bgImage', d.bgImage));
+          container.appendChild(createInput('吹き出し (MicroCopy)', 'microCopy', d.microCopy));
+          container.appendChild(createSubCtaEditor(d));
+        }
+        else if (section.type === 'logos') {
+          container.appendChild(createInput('タイトル', 'title', d.title));
+          d.items.forEach((item, idx) => {
+             const w = createPanel(`Logo ${idx+1}`, () => removeArrayItem('items', idx));
+             w.appendChild(createSubInput('ロゴ画像URL', `items.${idx}`, item));
+             container.appendChild(w);
+          });
+          container.appendChild(createAddBtn('ロゴ追加', () => addArrayItem('items', 'https://placehold.co/200x80?text=Logo')));
+        }
+        else if (section.type === 'feature_hero') {
+           container.appendChild(createInput('サブタイトル', 'subTitle', d.subTitle));
+           container.appendChild(createInput('タイトル', 'title', d.title));
+           container.appendChild(createTextArea('説明', 'desc', d.desc));
+           container.appendChild(createInput('画像URL', 'image', d.image));
+           d.checklist.forEach((item, idx) => {
+              const w = createPanel(`Check ${idx+1}`, () => removeArrayItem('checklist', idx));
+              w.appendChild(createSubInput('テキスト', `checklist.${idx}`, item));
+              container.appendChild(w);
+           });
+           container.appendChild(createAddBtn('チェック項目追加', () => addArrayItem('checklist', '新規機能')));
+        }
+        else if (section.type === 'case_study_detail') {
+          container.appendChild(createInput('セクションタイトル', 'title', d.title));
+          d.items.forEach((item, idx) => {
+            const w = createPanel(`事例 ${idx+1}`, () => removeArrayItem('items', idx));
+            w.appendChild(createSubInput('医院名', `items.${idx}.name`, item.name));
+            w.appendChild(createSubInput('見出し', `items.${idx}.headline`, item.headline));
+            w.appendChild(createSubTextArea('詳細説明', `items.${idx}.desc`, item.desc));
+            w.appendChild(createSubInput('画像1 URL', `items.${idx}.image1`, item.image1));
+            w.appendChild(createSubInput('画像2 URL', `items.${idx}.image2`, item.image2));
+            
+            const gBox = document.createElement('div'); gBox.className = 'bg-slate-800 p-3 rounded mt-2';
+            gBox.innerHTML = '<div class="text-xs font-bold text-green-400 mb-2">グラフ設定</div>';
+            gBox.appendChild(createSubInputRawSelect(['bar','pie'], `items.${idx}.graphType`, item.graphType));
+            gBox.appendChild(createSubInput('ラベル', `items.${idx}.metric.label`, item.metric.label));
+            const numRow = document.createElement('div'); numRow.className='grid grid-cols-2 gap-2 mt-1';
+            if(item.graphType === 'bar') numRow.appendChild(createSubInput('Before', `items.${idx}.metric.before`, item.metric.before, 'number'));
+            numRow.appendChild(createSubInput(item.graphType==='bar'?'After':'数値', `items.${idx}.metric.after`, item.metric.after, 'number'));
+            gBox.appendChild(numRow);
+            gBox.appendChild(createSubInput('単位', `items.${idx}.metric.unit`, item.metric.unit));
+            w.appendChild(gBox);
+            
+            container.appendChild(w);
+          });
+          container.appendChild(createAddBtn('事例追加', () => addArrayItem('items', {name:'New', headline:'Title', desc:'...', metric:{label:'売上', before:0, after:100, unit:'万'}, graphType:'bar'})));
+        }
+        else if (section.type === 'comparison') {
+          container.appendChild(createInput('タイトル', 'title', d.title));
+          const colPanel = document.createElement('div'); colPanel.className = 'panel-card mb-4';
+          colPanel.innerHTML = '<div class="text-xs font-bold text-blue-400 mb-2">比較対象（列）</div>';
+          d.cols.forEach((col, idx) => {
+             const div = document.createElement('div'); div.className='flex gap-2 mb-2';
+             div.appendChild(createSubInputRaw(col, (v)=>updateNestedData(`cols.${idx}`, v)));
+             if(idx > 0) { const btn = document.createElement('button'); btn.innerHTML='<i class="ph ph-trash"></i>'; btn.className='text-red-400 px-2'; btn.onclick=()=>removeArrayItem('cols', idx); div.appendChild(btn); }
+             colPanel.appendChild(div);
+          });
+          colPanel.appendChild(createAddBtn('列を追加', () => { addArrayItem('cols', '他社'); d.rows.forEach((r,ri)=>addArrayItem(`rows.${ri}.values`, '-')); }));
+          container.appendChild(colPanel);
+          d.rows.forEach((row, idx) => {
+            const w = createPanel(`行 ${idx+1}: ${row.label}`, () => removeArrayItem('rows', idx));
+            w.appendChild(createSubInput('項目名', `rows.${idx}.label`, row.label));
+            row.values.forEach((val, vi) => {
+               const colName = d.cols[vi] || `列${vi+1}`;
+               w.appendChild(createSubInput(colName, `rows.${idx}.values.${vi}`, val));
+            });
+            container.appendChild(w);
+          });
+          container.appendChild(createAddBtn('行追加', () => addArrayItem('rows', {label:'項目', values: Array(d.cols.length).fill('-')})));
+        }
+        else if (section.type === 'strengths') {
+          container.appendChild(createInput('サブタイトル', 'subTitle', d.subTitle));
+          container.appendChild(createInput('メインタイトル', 'mainTitle', d.mainTitle));
+          d.features.forEach((f, idx) => {
+            const w = createPanel(`Point ${idx+1}`, () => removeArrayItem('features', idx));
+            w.appendChild(createSubInput('タイトル', `features.${idx}.title`, f.title));
+            w.appendChild(createSubTextArea('説明', `features.${idx}.desc`, f.desc));
+            w.appendChild(createGradientSelect('グラデーション', `features.${idx}.color`, f.color));
+            container.appendChild(w);
+          });
+          container.appendChild(createAddBtn('強み追加', () => addArrayItem('features', {title:'New', desc:'...', color:GRADIENTS[0].value})));
+        }
+        else if (section.type === 'pricing') {
+          container.appendChild(createInput('タイトル', 'title', d.title));
+          container.appendChild(createTextArea('説明', 'desc', d.desc));
+          d.plans.forEach((p, idx) => {
+            const w = createPanel(`Plan ${idx+1}`, () => removeArrayItem('plans', idx));
+            w.appendChild(createSubInput('プラン名', `plans.${idx}.name`, p.name));
+            w.appendChild(createSubInput('価格', `plans.${idx}.price`, p.price));
+            w.appendChild(createSubTextArea('特徴', `plans.${idx}.features`, p.features));
+            const chkId = `chk-${idx}`;
+            const chk = document.createElement('div'); chk.className = 'mt-2 flex items-center gap-2';
+            chk.innerHTML = `<input type="checkbox" id="${chkId}" ${p.highlight?'checked':''} onchange="updateNestedData('plans.${idx}.highlight', this.checked)"><label for="${chkId}" class="text-xs">おすすめ</label>`;
+            w.appendChild(chk);
+            container.appendChild(w);
+          });
+          container.appendChild(createAddBtn('プラン追加', () => addArrayItem('plans', {name:'New', price:'-', features:'-', highlight:false})));
+        }
+        else if (section.type === 'faq') {
+          container.appendChild(createInput('タイトル', 'title', d.title));
+          d.items.forEach((item, idx) => {
+            const w = createPanel(`Q&A ${idx+1}`, () => removeArrayItem('items', idx));
+            w.appendChild(createSubInput('質問', `items.${idx}.q`, item.q));
+            w.appendChild(createSubTextArea('回答', `items.${idx}.a`, item.a));
+            container.appendChild(w);
+          });
+          container.appendChild(createAddBtn('質問追加', () => addArrayItem('items', {q:'質問', a:'回答'})));
+        }
+        else if (section.type === 'achievements') {
+          container.appendChild(createInput('タイトル', 'title', d.title));
+          d.items.forEach((item, idx) => {
+            const w = createPanel(`実績 ${idx+1}`, () => removeArrayItem('items', idx));
+            w.appendChild(createSubInput('名称', `items.${idx}.name`, item.name));
+            w.appendChild(createSubInput('指標', `items.${idx}.metric`, item.metric));
+            const g = document.createElement('div'); g.className='grid grid-cols-2 gap-2 mt-2';
+            g.appendChild(createSubInput('Before', `items.${idx}.before`, item.before, 'number'));
+            g.appendChild(createSubInput('After', `items.${idx}.after`, item.after, 'number'));
+            w.appendChild(g);
+            w.appendChild(createSubInput('単位', `items.${idx}.unit`, item.unit));
+            container.appendChild(w);
+          });
+          container.appendChild(createAddBtn('実績追加', () => addArrayItem('items', {name:'New', metric:'KPI', before:0, after:100, unit:'%'})));
+        }
+        else if (section.type === 'contact') {
+          container.appendChild(createInput('タイトル', 'title', d.title));
+          container.appendChild(createTextArea('説明文', 'desc', d.desc));
+          container.appendChild(createTextArea('HubSpotフォームコード', 'formCode', d.formCode));
+          container.appendChild(createInput('吹き出し (MicroCopy)', 'microCopy', d.microCopy));
+          container.appendChild(createSubCtaEditor(d));
+        }
+        else if (section.type === 'problem') {
+          container.appendChild(createInput('タイトル', 'title', d.title));
+          d.items.forEach((item, idx) => {
+            const w = createPanel(`課題 ${idx+1}`, () => removeArrayItem('items', idx));
+            w.appendChild(createSubInput('タイトル', `items.${idx}.title`, item.title));
+            w.appendChild(createSubTextArea('説明', `items.${idx}.desc`, item.desc));
+            container.appendChild(w);
+          });
+          container.appendChild(createAddBtn('課題追加', () => addArrayItem('items', {title:'新規課題', desc:'説明'})));
+        }
+        else if (section.type === 'agitation') {
+          container.appendChild(createInput('キャッチコピー', 'title', d.title));
+          container.appendChild(createTextArea('リード文', 'desc', d.desc));
+          container.appendChild(createInput('バッジ文言', 'badge', d.badge));
+        }
+        else if (section.type === 'flow') {
+          container.appendChild(createInput('タイトル', 'title', d.title));
+          d.steps.forEach((step, idx) => {
+            const w = createPanel(`Step ${idx+1}`, () => removeArrayItem('steps', idx));
+            w.appendChild(createSubInput('タイトル', `steps.${idx}.title`, step.title));
+            w.appendChild(createSubTextArea('説明', `steps.${idx}.desc`, step.desc));
+            container.appendChild(w);
+          });
+          container.appendChild(createAddBtn('ステップ追加', () => addArrayItem('steps', {title:'次へ', desc:'...'})));
+        }
+      }
+    }
+
+    /* --- UI Helpers --- */
+
+    function createInput(label, path, val) {
+      const d = document.createElement('div'); d.className = 'mb-4';
+      d.innerHTML = `<label class="editor-label">${label}</label><input type="text" class="editor-input" value="${val}" oninput="updateValue('${path}', this.value)">`;
+      return d;
+    }
+    function createColorInput(label, path, val) {
+      const d = document.createElement('div'); d.className = 'mb-4';
+      d.innerHTML = `<label class="editor-label">${label}</label><div class="flex gap-2"><input type="color" class="h-9 w-9 p-0 border-0 bg-transparent cursor-pointer" value="${val}" oninput="updateValue('${path}', this.value)"><input type="text" class="editor-input flex-1" value="${val}" oninput="updateValue('${path}', this.value)"></div>`;
+      return d;
+    }
+    function createTextArea(label, path, val) {
+      const d = document.createElement('div'); d.className = 'mb-4';
+      d.innerHTML = `<label class="editor-label">${label}</label><textarea class="editor-textarea h-20" oninput="updateValue('${path}', this.value)">${val}</textarea>`;
+      return d;
+    }
+    function createSubInput(label, path, val, type='text') {
+      const d = document.createElement('div'); d.className = 'mb-2';
+      d.innerHTML = `<label class="editor-label text-[10px] text-slate-500">${label}</label><input type="${type}" class="editor-input py-1 text-xs" value="${val}" oninput="updateNestedData('${path}', this.value)">`;
+      return d;
+    }
+    function createSubInputRaw(val, onChange) {
+      const inp = document.createElement('input'); inp.type='text'; inp.className='editor-input py-1 text-xs flex-1'; inp.value=val;
+      inp.oninput = (e) => onChange(e.target.value); return inp;
+    }
+    function createSubInputRawSelect(opts, path, val) {
+      const sel = document.createElement('select'); sel.className='editor-select py-1 text-xs mb-1';
+      opts.forEach(o => { const op = document.createElement('option'); op.value=o; op.text=o; if(o===val) op.selected=true; sel.appendChild(op); });
+      sel.onchange = (e) => updateNestedData(path, e.target.value);
+      return sel;
+    }
+    function createSubTextArea(label, path, val) {
+      const d = document.createElement('div'); d.className = 'mb-2';
+      d.innerHTML = `<label class="editor-label text-[10px] text-slate-500">${label}</label><textarea class="editor-textarea py-1 text-xs h-16" oninput="updateNestedData('${path}', this.value)">${val}</textarea>`;
+      return d;
+    }
+    function createGradientSelect(label, path, val) {
+      const d = document.createElement('div'); d.className = 'mb-2';
+      const options = GRADIENTS.map(g => `<option value="${g.value}" ${val===g.value?'selected':''}>${g.name}</option>`).join('');
+      d.innerHTML = `<label class="editor-label text-[10px] text-slate-500">${label}</label><select class="editor-select py-1 text-xs" onchange="updateNestedData('${path}', this.value)">${options}</select>`;
+      return d;
+    }
+    function createPanel(title, onDelete) {
+      const d = document.createElement('div'); d.className = 'panel-card';
+      d.innerHTML = `<div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-700"><span class="text-xs font-bold text-blue-400">${title}</span><button class="text-slate-500 hover:text-red-400"><i class="ph-bold ph-trash"></i></button></div>`;
+      d.querySelector('button').onclick = onDelete; return d;
+    }
+    function createAddBtn(text, onClick) {
+      const b = document.createElement('button');
+      b.className = 'w-full py-2 border border-dashed border-slate-600 rounded text-xs text-slate-400 hover:text-blue-400 hover:border-blue-400 transition mb-6';
+      b.innerText = `+ ${text}`; b.onclick = onClick; return b;
+    }
+    function createSubCtaEditor(d) {
+      const div = document.createElement('div'); div.className = 'panel-card mt-4';
+      div.innerHTML = `<div class="text-xs font-bold text-green-400 mb-2">サブCTA (資料請求ボタン)</div>`;
+      const chkId = `chk-subcta-${Date.now()}`;
+      const chk = document.createElement('div'); chk.className = 'mb-2 flex items-center gap-2';
+      chk.innerHTML = `<input type="checkbox" id="${chkId}" ${d.showSubCta?'checked':''} onchange="updateValue('showSubCta', this.checked)"><label for="${chkId}" class="text-xs">表示する</label>`;
+      div.appendChild(chk);
+      if(d.showSubCta) {
+        div.appendChild(createSubInput('ボタンテキスト', 'subCtaText', d.subCtaText));
+        div.appendChild(createSubInput('リンクURL', 'subCtaUrl', d.subCtaUrl));
+      }
+      return div;
+    }
+
+    /* --- Logic --- */
+    function updateValue(path, value) {
+      if(path.startsWith('global.')) lpData.global[path.split('.')[1]] = value;
+      else { const s = lpData.sections.find(x => x.id === activeId); if(s) s.data[path] = value; }
+      render();
+    }
+    function updateNestedData(path, value) {
+      const s = lpData.sections.find(x => x.id === activeId); if(!s) return;
+      const keys = path.split('.'); let t = s.data;
+      for(let i=0; i<keys.length-1; i++) t = t[keys[i]];
+      const last = keys[keys.length-1];
+      if(!isNaN(value) && value!=='' && typeof t[last]==='number') t[last] = Number(value); else t[last] = value;
+      render();
+    }
+    function addArrayItem(key, item) {
+      const s = lpData.sections.find(x => x.id === activeId);
+      if(s) {
+         const keys = key.split('.'); let t = s.data; for(let i=0; i<keys.length; i++) t = t[keys[i]];
+         t.push(item); render(); renderEditor(); 
+      }
+    }
+    function removeArrayItem(key, idx) {
+      if(!confirm('削除しますか？')) return;
+      const s = lpData.sections.find(x => x.id === activeId);
+      if(s) { s.data[key].splice(idx, 1); render(); renderEditor(); }
+    }
+    function addSection(type) {
+      const id = 's_' + Date.now();
+      let d = {};
+      if(type==='hero') d={tagline:'Tag', title:'Title', desc:'Desc', userCount:'100+', formCode:'', layout:'split', showSubCta:false, subCtaText:'資料請求', subCtaUrl:'#'};
+      if(type==='logos') d={title:'導入実績', items:['https://placehold.co/200x80/e2e8f0/94a3b8?text=Logo']};
+      if(type==='problem') d={title:'課題', items:[{title:'課題1', desc:'詳細'}]};
+      if(type==='agitation') d={title:'キャッチ', desc:'リード文', badge:'バッジ'};
+      if(type==='feature_hero') d={subTitle:'Service', title:'Title', desc:'Desc', checklist:['Feature 1'], image:''};
+      if(type==='comparison') d={title:'比較', cols:['自社','他社'], rows:[{label:'項目', values:['○','×']}]};
+      if(type==='strengths') d={subTitle:'Point', mainTitle:'強み', features:[{title:'強み1', desc:'詳細', color:GRADIENTS[0].value}]};
+      if(type==='achievements') d={title:'実績', items:[{name:'A社', metric:'売上', before:10, after:20, unit:'万'}]};
+      if(type==='pricing') d={title:'料金', desc:'...', plans:[{name:'Basic', price:'-', features:'-', highlight:false}]};
+      if(type==='flow') d={title:'流れ', steps:[{title:'Step1', desc:'内容'}]};
+      if(type==='faq') d={title:'FAQ', items:[{q:'質問', a:'回答'}]};
+      if(type==='contact') d={title:'お問い合わせ', desc:'...', formCode:'', showSubCta:false, subCtaText:'資料請求', subCtaUrl:'#', microCopy: '簡単30秒'};
+      if(type==='cta_middle') d={title:'CTA', desc:'...', btnText:'Click', btnUrl:'#', showSubCta:false, subCtaText:'Sub', subCtaUrl:'#', microCopy: '30秒で完了'};
+      if(type==='case_study_detail') d={title:'導入成功事例', items:[{name:'A社', headline:'成果', desc:'...', image1:'', image2:'', graphType:'bar', metric:{label:'売上', before:100, after:150, unit:'万'}}]};
+
+      lpData.sections.push({ id, type, data: d });
+      activeId = id; render(); switchTab('section');
+      setTimeout(() => document.getElementById('preview-area').scrollTop = 99999, 100);
+    }
+    function moveSection(dir) {
+      const i = lpData.sections.findIndex(x => x.id === activeId);
+      if(i === -1) return;
+      const t = i + dir;
+      if(t >= 0 && t < lpData.sections.length) {
+        [lpData.sections[i], lpData.sections[t]] = [lpData.sections[t], lpData.sections[i]];
+        render();
+      }
+    }
+    function deleteSection() {
+      if(!confirm('削除しますか？')) return;
+      lpData.sections = lpData.sections.filter(x => x.id !== activeId);
+      activeId = null; render(); renderEditor();
+    }
+    
+    // Export Function
+    function exportHtml() {
+      const content = document.getElementById('canvas').innerHTML;
+      const cssVarsMatch = content.match(new RegExp("<style>[\\s\\S]*?:root[\\s\\S]*?<\\/style>"));
+      const cssVars = cssVarsMatch ? cssVarsMatch[0] : '';
+
+      const head = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Landing Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', 'Noto Sans JP', sans-serif; }
+    /* Animation for Marquee */
+    @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .animate-marquee { animation: marquee 25s linear infinite; }
+  </style>
+  ${cssVars}
+  <script src="//js-na2.hsforms.net/forms/embed/v2.js"></script>
+</head>
+<body>`;
+      
+      const foot = `
+  <script>
+    window.addEventListener('load', function() {
+      if(window.hbspt) {
+        document.querySelectorAll('.hs-form-wrapper').forEach(w => {
+          window.hbspt.forms.create({
+            region: w.dataset.region,
+            portalId: w.dataset.portalId,
+            formId: w.dataset.formId,
+            target: '#' + w.id
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>`;
+      
+      const fullHtml = head + content + foot;
+      navigator.clipboard.writeText(fullHtml).then(() => alert('完全なHTMLコードをコピーしました！\n.htmlファイルとして保存してください。'));
+    }
+
+    render(); renderEditor();
+  </script>
+</body>
+</html>
