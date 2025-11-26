@@ -532,6 +532,7 @@
 
           <div class="material-banner__thumb-group">
             <div class="thumb dummy d1"></div>
+            <div class="thumb dummy d2"></div>
             <img src="${thumb}" class="thumb main" />
           </div>
         </a>
@@ -1277,6 +1278,7 @@
     .material-banner__thumb-group { position: relative; width: 32px; height: 42px; flex-shrink: 0; }
     .material-banner__thumb-group .thumb { position: absolute; border: 1px solid #e2e8f0; background: white; border-radius: 2px; }
     .material-banner__thumb-group .d1 { width: 28px; height: 36px; right: 4px; bottom: 4px; background: #f1f5f9; z-index: 1; }
+    .material-banner__thumb-group .d2 { width: 28px; height: 36px; right: 2px; bottom: 2px; background: #fff; transform: rotate(-2deg); z-index: 2;}
     .material-banner__thumb-group .main { width: 28px; height: 36px; right: 0; bottom: 0; z-index: 2; object-fit: cover; box-shadow: -2px 2px 4px rgba(0,0,0,0.1); }
   </style>
   ${cssVars}
