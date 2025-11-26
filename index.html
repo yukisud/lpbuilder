@@ -681,9 +681,7 @@
           <div class="container mx-auto px-6 relative z-10 flex flex-col items-center">
             <h2 class="text-3xl md:text-4xl font-bold mb-6 leading-tight">${d.title}</h2>
             <p class="text-blue-100 mb-8 max-w-2xl text-lg">${d.desc}</p>
-            
-            <!-- 白パネルで囲んで視認性確保 -->
-            <div class="bg-white/95 backdrop-blur rounded-xl p-8 w-full max-w-4xl text-gray-800 shadow-2xl">
+            <div class="w-full max-w-4xl text-gray-800">
                ${buttons}
             </div>
 
@@ -893,21 +891,25 @@
         const g = lpData.global;
         container.innerHTML = `
           <div class="mb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Global Settings</div>
-          <div class="space-y-4">
-            ${createInput('サービス名', 'global.serviceName', g.serviceName)}
-            ${createInput('会社名 (Footer)', 'global.companyName', g.companyName)}
-            ${createInput('会社ロゴURL', 'global.logoUrl', g.logoUrl)}
-            ${createInput('SP固定ボタン文言', 'global.ctaText', g.ctaText)}
-            ${createInput('リンク', 'global.ctaUrl', g.ctaUrl)}
-            <!-- 🎯 ② 入力欄追加 -->
-            ${createInput('資料サムネイルURL', 'global.materialThumb', g.materialThumb)}
-            <div class="border-t border-slate-700 pt-4 mt-4">
-              <div class="text-xs font-bold text-blue-400 mb-2">テーマカラー設定</div>
-              ${createColorInput('プライマリー (Main/Brand)', 'global.primaryColor', g.primaryColor)}
-              ${createColorInput('セカンダリー (Accent/Sub)', 'global.secondaryColor', g.secondaryColor)}
-            </div>
+          <div id="global-settings" class="space-y-4"></div>
+          <div class="border-t border-slate-700 pt-4 mt-4">
+            <div class="text-xs font-bold text-blue-400 mb-2">テーマカラー設定</div>
+            <div id="global-theme" class="space-y-4"></div>
           </div>
         `;
+        
+        const wrap = container.querySelector('#global-settings');
+        wrap.appendChild(createInput('サービス名', 'global.serviceName', g.serviceName));
+        wrap.appendChild(createInput('会社名 (Footer)', 'global.companyName', g.companyName));
+        wrap.appendChild(createInput('会社ロゴURL', 'global.logoUrl', g.logoUrl));
+        wrap.appendChild(createInput('SP固定ボタン文言', 'global.ctaText', g.ctaText));
+        wrap.appendChild(createInput('リンク', 'global.ctaUrl', g.ctaUrl));
+        wrap.appendChild(createInput('資料サムネイルURL', 'global.materialThumb', g.materialThumb));
+        
+        const wrapTheme = container.querySelector('#global-theme');
+        wrapTheme.appendChild(createColorInput('プライマリー', 'global.primaryColor', g.primaryColor));
+        wrapTheme.appendChild(createColorInput('セカンダリー', 'global.secondaryColor', g.secondaryColor));
+
       } else {
         const section = lpData.sections.find(s => s.id === activeId);
         if (!section) {
