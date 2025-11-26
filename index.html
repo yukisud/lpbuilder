@@ -3,28 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LP Builder</title>
+  <title>LP Builder v22</title>
   
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
-  
-  <!-- Tailwind CSS (CDN) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Phosphor Icons -->
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-  <!-- Tailwind Config -->
+  <!-- Dynamic Load for GAS Sandbox -->
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'Noto Sans JP', 'sans-serif'] },
-          animation: { marquee: 'marquee 25s linear infinite' },
-          keyframes: { marquee: { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } } }
-        }
-      }
-    }
+    // Tailwind CSS
+    (function(){
+      var s = document.createElement('script');
+      s.src = "https://cdn.tailwindcss.com";
+      s.onload = function() {
+        tailwind.config = {
+          theme: {
+            extend: {
+              fontFamily: { sans: ['Inter', 'Noto Sans JP', 'sans-serif'] },
+              animation: { marquee: 'marquee 25s linear infinite' },
+              keyframes: { marquee: { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } } }
+            }
+          }
+        };
+      };
+      document.head.appendChild(s);
+    })();
+    // Phosphor Icons
+    (function(){
+      var s = document.createElement('script');
+      s.src = "https://unpkg.com/@phosphor-icons/web";
+      document.head.appendChild(s);
+    })();
   </script>
 
   <style>
@@ -44,41 +52,90 @@
       min-height: 100vh;
       background: white;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      padding-bottom: 120px; /* SP固定ボタン用余白 */
+      padding-bottom: 120px;
     }
 
     /* --- Editor UI --- */
     .editable-section { position: relative; border: 2px solid transparent; transition: all 0.2s; }
     .editable-section:hover::after { content: ""; position: absolute; inset: 0; border: 2px dashed #3b82f6; pointer-events: none; z-index: 40; }
     .editable-section.active::after { content: ""; position: absolute; inset: 0; border: 3px solid #2563eb; z-index: 40; }
-    
     .editor-input, .editor-select, .editor-textarea {
       background: #1e293b; border: 1px solid #334155; color: white; 
       font-size: 13px; border-radius: 4px; padding: 8px; width: 100%; transition: 0.2s;
     }
-    .editor-input:focus, .editor-select:focus, .editor-textarea:focus { 
-      outline: none; border-color: #60a5fa; ring: 1px solid #60a5fa; 
-    }
+    .editor-input:focus, .editor-select:focus, .editor-textarea:focus { outline: none; border-color: #60a5fa; ring: 1px solid #60a5fa; }
     .editor-label { display: block; font-size: 11px; font-weight: bold; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
     .panel-card { background: #1e293b; border: 1px solid #334155; padding: 12px; border-radius: 6px; margin-bottom: 8px; }
 
-    /* --- HubSpot Override --- */
-    .hbspt-form, .hs-form-wrapper { width: 100%; }
-    .hbspt-form fieldset { max-width: 100% !important; margin-bottom: 1rem !important; }
-    .hbspt-form .hs-form-field { margin-bottom: 12px !important; }
-    .hbspt-form label { display: block; font-size: 13px; font-weight: bold; color: #374151; margin-bottom: 4px; }
-    .hbspt-form .hs-input, .hbspt-form textarea, .hbspt-form select {
-      width: 100% !important; padding: 12px !important; 
-      border: 1px solid #d1d5db !important; border-radius: 8px !important;
-      background-color: #f9fafb !important; font-size: 14px !important; color: #111827 !important;
+    /* --- HubSpot Form Styling (Strict Override) --- */
+    /* フォーム全体 */
+    .hs-form { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    
+    /* フィールドセット (枠線消去・余白調整) */
+    .hs-form fieldset { 
+      border: none !important; 
+      padding: 0 !important; 
+      margin: 0 0 15px 0 !important; 
+      max-width: 100% !important; 
+    }
+    
+    /* 2カラムレイアウト (姓・名など) */
+    .hs-form fieldset.form-columns-2 { display: flex !important; gap: 10px !important; }
+    .hs-form fieldset.form-columns-2 .hs-form-field { width: 50% !important; float: none !important; }
+
+    /* 各フィールドラッパー */
+    .hs-form .field { margin-bottom: 0 !important; }
+
+    /* ラベル */
+    .hs-form label { 
+      display: block !important; 
+      font-size: 13px !important; 
+      font-weight: bold !important; 
+      color: #374151 !important; /* Gray-700 */
+      margin-bottom: 6px !important; 
+    }
+    .hs-form-required { color: #ef4444 !important; margin-left: 4px !important; }
+
+    /* 入力欄 (Input, Select, Textarea) */
+    .hs-form .hs-input {
+      display: block !important;
+      width: 100% !important;
+      padding: 12px 16px !important;
+      font-size: 14px !important;
+      line-height: 1.5 !important;
+      color: #1f2937 !important;
+      background-color: #f9fafb !important;
+      border: 1px solid #d1d5db !important;
+      border-radius: 8px !important;
       box-sizing: border-box !important;
+      transition: border-color 0.2s !important;
     }
-    .hbspt-form .hs-button {
-      width: 100% !important; margin-top: 10px !important;
-      font-weight: bold !important; padding: 14px !important;
-      border-radius: 8px !important; border: none !important; cursor: pointer !important;
-      font-size: 16px !important; text-align: center !important;
+    .hs-form .hs-input:focus {
+      outline: none !important;
+      border-color: var(--color-primary) !important;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
     }
+    
+    /* エラーメッセージ */
+    .hs-error-msgs { list-style: none !important; padding: 0 !important; margin: 4px 0 0 0 !important; }
+    .hs-error-msg { color: #dc2626 !important; font-size: 12px !important; }
+
+    /* 送信ボタン */
+    .hs-form .actions { padding: 0 !important; margin-top: 20px !important; }
+    .hs-form .hs-button {
+      width: 100% !important;
+      background-color: var(--color-primary) !important;
+      color: white !important;
+      font-weight: bold !important;
+      font-size: 16px !important;
+      padding: 14px !important;
+      border-radius: 8px !important;
+      border: none !important;
+      cursor: pointer !important;
+      transition: opacity 0.2s !important;
+      text-align: center !important;
+    }
+    .hs-form .hs-button:hover { opacity: 0.9 !important; }
 
     /* --- Bubble Arrow --- */
     .bubble-arrow {
@@ -102,7 +159,7 @@
   <div class="w-[380px] bg-slate-900 border-l border-slate-700 flex flex-col shadow-2xl z-50 flex-shrink-0">
     <div class="h-14 border-b border-slate-700 flex items-center justify-between px-4 bg-slate-800">
       <div class="font-bold text-white flex items-center gap-2">
-        <i class="ph-fill ph-paint-brush-broad text-blue-500"></i> LP Builder
+        <i class="ph-fill ph-paint-brush-broad text-blue-500"></i> LP Builder v22
       </div>
       <button onclick="exportHtml()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-1 transition">
         <i class="ph-bold ph-code"></i> 書出し
@@ -121,11 +178,11 @@
       <div class="grid grid-cols-2 gap-2">
         <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('hero')"><i class="ph ph-image"></i> FV (Hero)</button>
         <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('cta_middle')"><i class="ph ph-hand-pointing"></i> 中間CTA</button>
+        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('contact')"><i class="ph ph-envelope"></i> お問い合わせ</button>
         <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('case_study_detail')"><i class="ph ph-article"></i> 成功事例詳細</button>
         <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('feature_hero')"><i class="ph ph-monitor"></i> サービス詳細</button>
         <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('comparison')"><i class="ph ph-scales"></i> 比較表</button>
         <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('pricing')"><i class="ph ph-currency-yen"></i> 料金</button>
-        <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('contact')"><i class="ph ph-envelope"></i> お問い合わせ</button>
         <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('achievements')"><i class="ph ph-chart-bar"></i> 実績(3col)</button>
         <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('flow')"><i class="ph ph-steps"></i> 流れ</button>
         <button class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1" onclick="addSection('strengths')"><i class="ph ph-lightning"></i> 強み</button>
@@ -316,7 +373,7 @@
       const g = lpData.global;
       let html = '';
 
-      // CSS Injection for Dynamic Colors
+      // CSS Injection for Dynamic Colors & Layout
       const cssVars = `
         <style>
           :root {
@@ -332,8 +389,7 @@
           .btn-main { background-color: var(--color-primary) !important; color: white !important; }
           .btn-main:hover { opacity: 0.9; }
           
-          /* 資料請求ボタン (サブCTA) - ボタンデザイン化 (枠なし白背景 or 枠あり白) */
-          /* FV/Middle用: 白背景・シャドウ・枠なし */
+          /* 資料請求ボタン (サブCTA) - ボタンデザイン化 */
           .btn-sub { 
             background-color: white !important; 
             color: var(--color-secondary) !important; 
@@ -465,18 +521,16 @@
     }
 
     /* --- HubSpot --- */
-    // Dynamic HubSpot Loader Function
     function loadHubSpotScripts() {
-      if (window.hbspt) {
-        runHubSpotEmbeds();
-        return;
+      if (!window.hbspt && !document.querySelector('script[src*="hsforms.net"]')) {
+        const script = document.createElement('script');
+        script.src = "//js-na2.hsforms.net/forms/embed/v2.js";
+        script.onload = () => runHubSpotEmbeds();
+        document.body.appendChild(script);
+      } else {
+        setTimeout(runHubSpotEmbeds, 100);
       }
-      var s = document.createElement("script");
-      s.src = "//js-na2.hsforms.net/forms/embed/v2.js";
-      s.onload = function() { runHubSpotEmbeds(); };
-      document.body.appendChild(s);
     }
-
     function runHubSpotEmbeds() {
       if (!window.hbspt) return;
       document.querySelectorAll('.hs-form-wrapper').forEach(w => {
@@ -504,10 +558,15 @@
       const bgStyle = d.bgImage ? `background-image: url('${d.bgImage}'); background-size: cover; background-position: center;` : '';
       let formHtml = '';
       const hsData = parseHubSpotCode(d.formCode);
-      if (hsData) formHtml = `<div id="hs-hero-${id}" class="hs-form-wrapper bg-white p-6 rounded-xl shadow-lg border border-gray-100" data-portal-id="${hsData.portalId}" data-form-id="${hsData.formId}" data-region="${hsData.region}"></div>`;
+      // 見出し追加
+      if (hsData) formHtml = `
+        <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 text-left">
+          <h3 class="text-lg font-bold text-center mb-4 text-gray-800">無料相談はこちらから</h3>
+          <div id="hs-hero-${id}" class="hs-form-wrapper" data-portal-id="${hsData.portalId}" data-form-id="${hsData.formId}" data-region="${hsData.region}"></div>
+        </div>`;
       else formHtml = `
         <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-           <h3 class="text-lg font-bold text-center mb-4 text-gray-800">無料相談・デモ</h3>
+           <h3 class="text-lg font-bold text-center mb-4 text-gray-800">無料相談はこちらから</h3>
            <div class="space-y-3">
              <input type="text" placeholder="会社名" class="w-full bg-gray-50 border border-gray-200 rounded px-3 py-3 text-sm">
              <input type="email" placeholder="メールアドレス" class="w-full bg-gray-50 border border-gray-200 rounded px-3 py-3 text-sm">
@@ -565,7 +624,6 @@
       const bg = d.bgImage ? `background-image: url('${d.bgImage}'); background-size: cover;` : 'background: linear-gradient(135deg, #1e3a8a, #2563eb);';
       const overlay = d.bgImage ? '<div class="absolute inset-0 bg-slate-900/80"></div>' : '';
       
-      // 中間CTA用デザイン: パネル + ボタン均等配置 (renderBtnGroupを利用)
       const buttons = renderBtnGroup(d.btnText, d.btnUrl, d.showSubCta, d.subCtaText, d.subCtaUrl, d.microCopy);
 
       return `
@@ -668,10 +726,14 @@
     function tplContact(d, id) {
       let formHtml = '';
       const hsData = parseHubSpotCode(d.formCode);
-      if (hsData) formHtml = `<div id="hs-contact-${id}" class="hs-form-wrapper bg-white p-8 rounded-2xl shadow-xl text-gray-800" data-portal-id="${hsData.portalId}" data-form-id="${hsData.formId}" data-region="${hsData.region}"></div>`;
+      if (hsData) formHtml = `
+        <div class="bg-white p-8 rounded-2xl shadow-xl text-gray-800">
+          <h3 class="text-xl font-bold mb-6 text-center">無料相談はこちらから</h3>
+          <div id="hs-contact-${id}" class="hs-form-wrapper" data-portal-id="${hsData.portalId}" data-form-id="${hsData.formId}" data-region="${hsData.region}"></div>
+        </div>`;
       else formHtml = `
          <div class="bg-white p-8 rounded-2xl shadow-xl text-gray-800">
-           <h3 class="text-xl font-bold mb-6 text-center">30秒で簡単入力</h3>
+           <h3 class="text-xl font-bold mb-6 text-center">無料相談はこちらから</h3>
            <div class="space-y-4">
              <input type="text" placeholder="会社名" class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200">
              <input type="email" placeholder="メールアドレス" class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200">
@@ -685,7 +747,6 @@
            <div class="bubble-arrow" style="position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid #fbbf24;"></div>
         </div>` : '';
 
-      // 修正: テキスト、吹き出し、ボタンを縦一列 (flex-col) に配置
       const subBtn = d.showSubCta ? `
         <div class="mt-12 text-center bg-white/10 p-6 rounded-xl backdrop-blur-sm">
            <div class="flex flex-col items-center gap-4">
@@ -790,18 +851,21 @@
 
       if (currentTab === 'global') {
         const g = lpData.global;
-        container.innerHTML = '';
-          container.appendChild(createInput('サービス名', 'global.serviceName', g.serviceName));
-          container.appendChild(createInput('会社名', 'global.companyName', g.companyName));
-          container.appendChild(createInput('会社ロゴURL', 'global.logoUrl', g.logoUrl));
-          container.appendChild(createInput('SP固定ボタン文言', 'global.ctaText', g.ctaText));
-          container.appendChild(createInput('リンク', 'global.ctaUrl', g.ctaUrl));
-          
-          const colorSection = document.createElement('div');
-          colorSection.className = "border-t border-slate-700 pt-4 mt-4";
-          colorSection.appendChild(createColorInput('プライマリー', 'global.primaryColor', g.primaryColor));
-          colorSection.appendChild(createColorInput('セカンダリー', 'global.secondaryColor', g.secondaryColor));
-          container.appendChild(colorSection);
+        container.innerHTML = `
+          <div class="mb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Global Settings</div>
+          <div class="space-y-4">
+            ${createInput('サービス名', 'global.serviceName', g.serviceName)}
+            ${createInput('会社名 (Footer)', 'global.companyName', g.companyName)}
+            ${createInput('会社ロゴURL', 'global.logoUrl', g.logoUrl)}
+            ${createInput('SP固定ボタン文言', 'global.ctaText', g.ctaText)}
+            ${createInput('リンク', 'global.ctaUrl', g.ctaUrl)}
+            <div class="border-t border-slate-700 pt-4 mt-4">
+              <div class="text-xs font-bold text-blue-400 mb-2">テーマカラー設定</div>
+              ${createColorInput('プライマリー (Main/Brand)', 'global.primaryColor', g.primaryColor)}
+              ${createColorInput('セカンダリー (Accent/Sub)', 'global.secondaryColor', g.secondaryColor)}
+            </div>
+          </div>
+        `;
       } else {
         const section = lpData.sections.find(s => s.id === activeId);
         if (!section) {
