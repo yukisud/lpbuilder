@@ -790,21 +790,18 @@
 
       if (currentTab === 'global') {
         const g = lpData.global;
-        container.innerHTML = `
-          <div class="mb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Global Settings</div>
-          <div class="space-y-4">
-            ${createInput('サービス名', 'global.serviceName', g.serviceName)}
-            ${createInput('会社名 (Footer)', 'global.companyName', g.companyName)}
-            ${createInput('会社ロゴURL', 'global.logoUrl', g.logoUrl)}
-            ${createInput('SP固定ボタン文言', 'global.ctaText', g.ctaText)}
-            ${createInput('リンク', 'global.ctaUrl', g.ctaUrl)}
-            <div class="border-t border-slate-700 pt-4 mt-4">
-              <div class="text-xs font-bold text-blue-400 mb-2">テーマカラー設定</div>
-              ${createColorInput('プライマリー (Main/Brand)', 'global.primaryColor', g.primaryColor)}
-              ${createColorInput('セカンダリー (Accent/Sub)', 'global.secondaryColor', g.secondaryColor)}
-            </div>
-          </div>
-        `;
+        container.innerHTML = '';
+          container.appendChild(createInput('サービス名', 'global.serviceName', g.serviceName));
+          container.appendChild(createInput('会社名', 'global.companyName', g.companyName));
+          container.appendChild(createInput('会社ロゴURL', 'global.logoUrl', g.logoUrl));
+          container.appendChild(createInput('SP固定ボタン文言', 'global.ctaText', g.ctaText));
+          container.appendChild(createInput('リンク', 'global.ctaUrl', g.ctaUrl));
+          
+          const colorSection = document.createElement('div');
+          colorSection.className = "border-t border-slate-700 pt-4 mt-4";
+          colorSection.appendChild(createColorInput('プライマリー', 'global.primaryColor', g.primaryColor));
+          colorSection.appendChild(createColorInput('セカンダリー', 'global.secondaryColor', g.secondaryColor));
+          container.appendChild(colorSection);
       } else {
         const section = lpData.sections.find(s => s.id === activeId);
         if (!section) {
