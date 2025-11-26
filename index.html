@@ -69,8 +69,32 @@
 
     /* --- Material Banner Styles (Added) --- */
     /* --- 完成版 Material Banner Styles --- */
-
-    /* バナー本体 */
+    /* FV 専用スタイル */
+    .fv-banner .material-banner__thumb-group {
+      right: 5px !important;
+      top: 0px !important;
+    }
+    
+    .fv-banner .material-banner__thumb-group .d1 {
+      background: #ccc !important;
+      top: 15px !important;
+      right: 20px !important;
+      transform: rotate(8deg) !important;
+    }
+    
+    .fv-banner .material-banner__thumb-group .d2 {
+      background: #eee !important;
+      top: 12px !important;
+      right: 10px !important;
+      transform: rotate(10deg) !important;
+    }
+    
+    .fv-banner .material-banner__thumb-group .main {
+      top: 10px !important;
+      right: 0px !important;
+      transform: rotate(15deg) !important;
+    }
+    /* 中間・ラスト CTA 共通 */
     .material-banner {
       display: flex;
       align-items: center;
@@ -83,30 +107,15 @@
       overflow: visible;
       box-shadow: 0 6px 14px rgba(0,0,0,0.2);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
-      margin-bottom: 40px;
     }
     
-    .material-banner:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
-    }
+    /* 丸アイコン削除 */
+    .material-banner__icon { display:none !important; }
     
-    /* 左の丸アイコン */
-    .material-banner__icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: white;
-      color: #7a36ff;
-      font-size: 22px;
-      font-weight: bold;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-right: 20px;
-    }
+    /* margin-bottom 削除 */
+    .material-banner { margin-bottom: 0 !important; }
     
-    /* テキスト（フォントサイズ調整） */
+    /* テキスト */
     .material-banner__text .line1 {
       font-size: 18px;
       font-weight: 700;
@@ -120,7 +129,7 @@
       margin-top: 6px;
     }
     
-    /* --- 資料画像（3枚重ね） --- */
+    /* thumb group (中間・ラスト) */
     .material-banner__thumb-group {
       position: absolute;
       right: -20px;
@@ -130,41 +139,56 @@
       pointer-events: none;
     }
     
-    /* 共通スタイル */
-    .material-banner__thumb-group .thumb {
-      position: absolute;
-      width: 100px;
-      height: 70px;
-      border-radius: 6px;
-      object-fit: cover;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
-      background-size: cover;
-      background-position: center;
-    }
-    
-    /* 一番上（本物） */
-    .material-banner__thumb-group .main {
-      top: 10px;
-      right: 0px;
-      transform: rotate(3deg);
-    }
-    
-    /* 2番目（中） */
-    .material-banner__thumb-group .d2 {
-      background: #eee;
-      top: 12px;
-      right: 10px;
-      transform: rotate(-1deg);
-    }
-    
-    /* 一番下（奥） */
+    /* 下 */
     .material-banner__thumb-group .d1 {
       background: #ccc;
       top: 15px;
       right: 20px;
-      transform: rotate(-4deg);
+      transform: rotate(15deg);
     }
-
+    
+    /* 中 */
+    .material-banner__thumb-group .d2 {
+      background: #eee;
+      top: 12px;
+      right: 10px;
+      transform: rotate(18deg);
+    }
+    
+    /* 上（本物画像） */
+    .material-banner__thumb-group .main {
+      top: 10px;
+      right: 0px;
+      transform: rotate(20deg);
+      width: 100px;
+      height: 70px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+    /* CTA ボタンを資料バナーと同じサイズに合わせる */
+    .cta-main-button {
+      display: block;
+      width: 100%;
+      max-width: 420px;   /* 資料請求バナーとだいたい同じ幅 */
+      margin: 0 auto;
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      .cta-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+    
+      .material-banner {
+        width: 100%;
+      }
+    
+      .cta-main-button {
+        width: 100%;
+        max-width: 100%;
+      }
+    }
     /* --- HubSpot Form Styling (Strict Override) --- */
     .hs-form { margin: 0 !important; padding: 0 !important; width: 100% !important; }
     .hs-form fieldset { border: none !important; padding: 0 !important; margin: 0 0 15px 0 !important; max-width: 100% !important; }
@@ -588,7 +612,7 @@
       const main = `
         <div class="flex flex-col items-center w-full md:w-auto relative">
            ${bubble}
-           <a href="${mainUrl}" class="block w-full md:w-64 py-4 rounded-lg font-bold text-center shadow-lg transition btn-main text-lg relative z-0 border-2 border-white/20">
+           <a href="${mainUrl}" class="btn-main cta-main-button">
              ${mainText}
            </a>
         </div>
