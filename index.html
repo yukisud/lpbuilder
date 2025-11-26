@@ -8,7 +8,7 @@
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
 
-  <!-- Dynamic Load for GAS Sandbox -->
+  <!-- Dynamic Load for Sandbox -->
   <script>
     // Tailwind CSS
     (function(){
@@ -67,128 +67,131 @@
     .editor-label { display: block; font-size: 11px; font-weight: bold; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
     .panel-card { background: #1e293b; border: 1px solid #334155; padding: 12px; border-radius: 6px; margin-bottom: 8px; }
 
-    /* --- Material Banner Styles (Added) --- */
-    /* --- 完成版 Material Banner Styles --- */
-    /* FV 専用スタイル */
-    .fv-banner .material-banner__thumb-group {
-      right: 5px !important;
-      top: 0px !important;
-    }
+    /* --- Material Banner Styles (Preview & Export Common) --- */
     
-    .fv-banner .material-banner__thumb-group .d1 {
-      background: #ccc !important;
-      top: 15px !important;
-      right: 20px !important;
-      transform: rotate(8deg) !important;
-    }
-    
-    .fv-banner .material-banner__thumb-group .d2 {
-      background: #eee !important;
-      top: 12px !important;
-      right: 10px !important;
-      transform: rotate(10deg) !important;
-    }
-    
-    .fv-banner .material-banner__thumb-group .main {
-      top: 10px !important;
-      right: 0px !important;
-      transform: rotate(15deg) !important;
-    }
-    /* 中間・ラスト CTA 共通 */
+    /* 共通ベース */
     .material-banner {
       display: flex;
       align-items: center;
       position: relative;
       padding: 18px 24px;
       border-radius: 16px;
+      /* backgroundはJSで動的にセットされますが、フォールバックとして記載 */
       background: linear-gradient(90deg, #ff72d2, #6a5bff);
       color: white;
       text-decoration: none;
       overflow: visible;
       box-shadow: 0 6px 14px rgba(0,0,0,0.2);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+      margin-bottom: 0 !important;
     }
     
-    /* 丸アイコン削除 */
+    .material-banner:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+    }
+    
+    /* アイコン非表示 */
     .material-banner__icon { display:none !important; }
-    
-    /* margin-bottom 削除 */
-    .material-banner { margin-bottom: 0 !important; }
-    
-    /* テキスト */
+
+    /* テキストエリア */
+    .material-banner__text {
+      flex: 1;
+      z-index: 10;
+    }
     .material-banner__text .line1 {
-      font-size: 18px;
+      font-size: 14px; /* 少し調整 */
       font-weight: 700;
       color: #ffe54a;
+      display: block;
+      margin-bottom: 2px;
     }
-    
     .material-banner__text .line2 {
-      font-size: 24px;
+      font-size: 18px; /* 少し調整 */
       font-weight: 800;
       display: block;
-      margin-top: 6px;
+      line-height: 1.3;
     }
     
-    /* thumb group (中間・ラスト) */
+    /* サムネイルグループ (共通: 中間・ラスト用) */
     .material-banner__thumb-group {
       position: absolute;
-      right: -20px;
-      top: -10px;
-      width: 160px;
-      height: 120px;
+      right: -10px;
+      top: -15px;
+      width: 100px;
+      height: 100px;
       pointer-events: none;
     }
     
-    /* 下 */
+    .material-banner__thumb-group .thumb {
+      position: absolute;
+      border-radius: 4px;
+      box-shadow: -2px 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* 中間・ラスト CTA 配置 (重なり) */
     .material-banner__thumb-group .d1 {
       background: #ccc;
-      top: 15px;
-      right: 20px;
+      width: 70px; height: 50px;
+      top: 25px; right: 20px;
       transform: rotate(15deg);
+      z-index: 1;
     }
-    
-    /* 中 */
     .material-banner__thumb-group .d2 {
       background: #eee;
-      top: 12px;
-      right: 10px;
+      width: 70px; height: 50px;
+      top: 20px; right: 10px;
       transform: rotate(18deg);
+      z-index: 2;
     }
-    
-    /* 上（本物画像） */
     .material-banner__thumb-group .main {
-      top: 10px;
-      right: 0px;
+      width: 80px; height: 60px;
+      top: 15px; right: 0px;
       transform: rotate(20deg);
-      width: 100px;
-      height: 70px;
-      border-radius: 6px;
+      z-index: 3;
       object-fit: cover;
+      background: #fff;
     }
-    /* CTA ボタンを資料バナーと同じサイズに合わせる */
+
+    /* FV (Hero) 専用スタイル overrides */
+    .fv-banner .material-banner__thumb-group {
+      right: 5px !important;
+      top: 0px !important;
+    }
+    .fv-banner .material-banner__thumb-group .d1 {
+      top: 15px !important; right: 20px !important; transform: rotate(8deg) !important;
+    }
+    .fv-banner .material-banner__thumb-group .d2 {
+      top: 12px !important; right: 10px !important; transform: rotate(10deg) !important;
+    }
+    .fv-banner .material-banner__thumb-group .main {
+      top: 10px !important; right: 0px !important; transform: rotate(15deg) !important;
+    }
+
+    /* メインボタン (CTA Button) */
     .cta-main-button {
       display: block;
       width: 100%;
-      max-width: 420px;   /* 資料請求バナーとだいたい同じ幅 */
+      max-width: 420px;
       margin: 0 auto;
       text-align: center;
+      /* 追加: ボタン自体のスタイル */
+      background-color: var(--color-primary);
+      color: white;
+      font-weight: bold;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s;
     }
+    .cta-main-button:hover { opacity: 0.9; transform: translateY(-1px); }
+
     @media (max-width: 768px) {
-      .cta-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-      }
-    
-      .material-banner {
-        width: 100%;
-      }
-    
-      .cta-main-button {
-        width: 100%;
-        max-width: 100%;
-      }
+      .cta-panel { flex-direction: column; gap: 24px; }
+      .material-banner { width: 100%; }
+      .cta-main-button { width: 100%; max-width: 100%; }
     }
+
     /* --- HubSpot Form Styling (Strict Override) --- */
     .hs-form { margin: 0 !important; padding: 0 !important; width: 100% !important; }
     .hs-form fieldset { border: none !important; padding: 0 !important; margin: 0 0 15px 0 !important; max-width: 100% !important; }
@@ -292,7 +295,7 @@
         primaryColor: '#2563eb', // Blue-600
         secondaryColor: '#f97316', // Orange-500
         
-        /* ▼ 追加 ▼ */
+        /* Material Banner Settings */
         materialThumb: 'https://placehold.co/300x400?text=DOC',
         materialLeadText: '詳しく知りたい方',
         materialBackgroundStart: '#ff72d2',
@@ -544,7 +547,7 @@
         </footer>
       `;
 
-      // SP Sticky Button (2 Buttons, pb-4 = 1rem)
+      // SP Sticky Button
       html += `
         <div class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 shadow-2xl z-50 flex gap-2 pb-4">
            <a href="${g.subCtaUrlSp}" class="flex-1 py-3 rounded-lg font-bold text-center shadow-lg btn-sub-sticky text-sm flex items-center justify-center">
@@ -560,49 +563,38 @@
       loadHubSpotScripts();
     }
 
-    /* --- Helper: Buttons & Layout & Banner --- */
-    
-    // 🎯 ③ 新関数: renderMaterialBanner
+    /* --- Helper: Material Banner --- */
     function renderMaterialBanner(subText, subUrl) {
       const g = lpData.global;
       const thumb = g.materialThumb || 'https://placehold.co/300x400?text=DOC';
-    
       const lead = g.materialLeadText || '詳しく知りたい方';
-    
       const gradStart = g.materialBackgroundStart || '#ff72d2';
       const gradEnd = g.materialBackgroundEnd || '#6a5bff';
     
       return `
         <a href="${subUrl}" class="material-banner"
            style="background: linear-gradient(90deg, ${gradStart}, ${gradEnd});">
-    
           <div class="material-banner__icon">▶</div>
-    
           <div class="material-banner__text">
             <span class="line1">${lead}</span>
             <span class="line2">${subText}</span>
           </div>
-    
           <div class="material-banner__thumb-group">
             <div class="thumb dummy d1"></div>
             <div class="thumb dummy d2"></div>
             <img src="${thumb}" class="thumb main">
           </div>
-    
         </a>
       `;
     }
 
-
     function renderBtnGroup(mainText, mainUrl, showSub, subText, subUrl, microCopy) {
-      // マイクロコピー: relative配置 (中央寄せ)
       const bubble = microCopy ? `
         <div class="relative inline-flex items-center justify-center bubble-box text-xs font-bold px-4 py-1.5 rounded-full shadow-md animate-bounce whitespace-nowrap mb-2">
            ${microCopy}
            <div class="bubble-arrow" style="position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid #fbbf24;"></div>
         </div>` : '';
 
-      // 🎯 サブCTAの置き換え (Material Banner)
       const sub = showSub ? `
         <div class="w-full md:w-auto flex justify-center">
            ${renderMaterialBanner(subText, subUrl)}
@@ -612,14 +604,14 @@
       const main = `
         <div class="flex flex-col items-center w-full md:w-auto relative">
            ${bubble}
-           <a href="${mainUrl}" class="btn-main cta-main-button">
+           <a href="${mainUrl}" class="cta-main-button">
              ${mainText}
            </a>
         </div>
       `;
 
       return `
-        <div class="flex flex-col md:flex-row items-start justify-start gap-8 md:gap-12 mt-12 w-full">
+        <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 mt-12 w-full">
            ${sub}
            ${main}
         </div>
@@ -679,7 +671,7 @@
            </div>
         </div>`;
 
-      // 🎯 ⑤ 置き換えコード（Hero）
+      // FV Banner (Specific Style Class)
       const ctaArea = d.showSubCta
         ? `<div class="mt-6 fv-banner">${renderMaterialBanner(d.subCtaText, d.subCtaUrl)}</div>`
         : '';
@@ -727,7 +719,6 @@
     function tplCtaMiddle(d) {
       const bg = d.bgImage ? `background-image: url('${d.bgImage}'); background-size: cover;` : 'background: linear-gradient(135deg, #1e3a8a, #2563eb);';
       const overlay = d.bgImage ? '<div class="absolute inset-0 bg-slate-900/80"></div>' : '';
-      
       const buttons = renderBtnGroup(d.btnText, d.btnUrl, d.showSubCta, d.subCtaText, d.subCtaUrl, d.microCopy);
 
       return `
@@ -739,87 +730,6 @@
             <div class="w-full max-w-4xl text-gray-800">
                ${buttons}
             </div>
-
-          </div>
-        </section>
-      `;
-    }
-
-    function tplCaseStudyDetail(d) {
-      const items = d.items.map(i => {
-        const images = [];
-        if(i.image1) images.push(`<img src="${i.image1}" class="rounded-lg shadow-md w-full h-48 object-cover">`);
-        if(i.image2) images.push(`<img src="${i.image2}" class="rounded-lg shadow-md w-full h-48 object-cover">`);
-        const imgGrid = images.length > 0 ? `<div class="grid grid-cols-${images.length} gap-4 mb-6">${images.join('')}</div>` : '';
-
-        let graphHtml = '';
-        if (i.metric) {
-           const m = i.metric;
-           const max = Math.max(m.before, m.after) * 1.1;
-           if (i.graphType === 'bar') {
-             const hB = (m.before / max) * 100;
-             const hA = (m.after / max) * 100;
-             graphHtml = `
-               <div class="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                 <div class="font-bold text-center text-gray-600 mb-4">${m.label}の推移</div>
-                 <div class="relative h-40 flex items-end justify-center gap-8 px-4">
-                   <div class="flex flex-col justify-end h-full w-16 text-center group">
-                     <div class="text-xs text-gray-400 mb-1">Before</div>
-                     <div class="w-full bg-gray-300 rounded-t transition-all group-hover:bg-gray-400" style="height:${hB}%"></div>
-                     <div class="text-sm font-bold text-gray-600 mt-1">${m.before}</div>
-                   </div>
-                   <div class="flex flex-col justify-end h-full w-16 text-center relative group">
-                     <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded animate-bounce whitespace-nowrap">UP!</div>
-                     <div class="text-xs text-primary mb-1">After</div>
-                     <div class="w-full bg-primary rounded-t shadow-lg" style="height:${hA}%"></div>
-                     <div class="text-xl font-bold text-primary mt-1">${m.after}</div>
-                   </div>
-                 </div>
-                 <div class="text-center text-xs text-gray-400 mt-2">単位: ${m.unit}</div>
-               </div>
-             `;
-           } else {
-             graphHtml = `
-               <div class="mt-6 p-6 bg-gray-50 rounded-xl border border-gray-100 flex flex-col items-center">
-                 <div class="font-bold text-gray-600 mb-4">${m.label}</div>
-                 <div class="w-32 h-32 rounded-full relative shadow-inner" style="background: conic-gradient(var(--color-primary) 0% 70%, #e5e7eb 70% 100%);">
-                    <div class="absolute inset-4 bg-white rounded-full flex items-center justify-center flex-col">
-                       <span class="text-2xl font-bold text-primary">${m.after}${m.unit}</span>
-                       <span class="text-xs text-gray-400">達成</span>
-                    </div>
-                 </div>
-               </div>
-             `;
-           }
-        }
-
-        return `
-          <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-12">
-            <div class="p-8 md:p-12">
-              <div class="flex flex-col md:flex-row gap-10">
-                <div class="md:w-1/2">
-                  <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 rounded-full bg-blue-50 text-primary flex items-center justify-center"><i class="ph-fill ph-buildings text-xl"></i></div>
-                    <span class="font-bold text-gray-500">${i.name}</span>
-                  </div>
-                  <h3 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 leading-tight">${i.headline}</h3>
-                  <p class="text-gray-600 leading-relaxed mb-6">${i.desc}</p>
-                  ${imgGrid}
-                </div>
-                <div class="md:w-1/2 flex flex-col justify-center">
-                   ${graphHtml}
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      return `
-        <section class="py-24 bg-white">
-          <div class="container mx-auto px-6 max-w-5xl">
-            <h2 class="text-3xl font-bold text-center text-gray-900 mb-16">${d.title}</h2>
-            <div>${items}</div>
           </div>
         </section>
       `;
@@ -828,30 +738,14 @@
     function tplContact(d, id) {
       let formHtml = '';
       const hsData = parseHubSpotCode(d.formCode);
-      if (hsData) formHtml = `
-        <div class="bg-white p-8 rounded-2xl shadow-xl text-gray-800">
-          <h3 class="text-xl font-bold mb-6 text-center">無料相談はこちらから</h3>
-          <div id="hs-contact-${id}" class="hs-form-wrapper" data-portal-id="${hsData.portalId}" data-form-id="${hsData.formId}" data-region="${hsData.region}"></div>
-        </div>`;
-      else formHtml = `
-         <div class="bg-white p-8 rounded-2xl shadow-xl text-gray-800">
-           <h3 class="text-xl font-bold mb-6 text-center">無料相談はこちらから</h3>
-           <div class="space-y-4">
-             <input type="text" placeholder="会社名" class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200">
-             <input type="email" placeholder="メールアドレス" class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200">
-             <button class="w-full py-4 btn-main font-bold rounded-lg shadow-lg">資料を請求する</button>
-           </div>
-         </div>`;
+      if (hsData) formHtml = `<div class="bg-white p-8 rounded-2xl shadow-xl text-gray-800"><h3 class="text-xl font-bold mb-6 text-center">無料相談はこちらから</h3><div id="hs-contact-${id}" class="hs-form-wrapper" data-portal-id="${hsData.portalId}" data-form-id="${hsData.formId}" data-region="${hsData.region}"></div></div>`;
+      else formHtml = `<div class="bg-white p-8 rounded-2xl shadow-xl text-gray-800"><h3 class="text-xl font-bold mb-6 text-center">無料相談はこちらから</h3><div class="space-y-4"><input type="text" placeholder="会社名" class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200"><input type="email" placeholder="メールアドレス" class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200"><button class="w-full py-4 btn-main font-bold rounded-lg shadow-lg">資料を請求する</button></div></div>`;
 
-      // 🎯 ⑤ 置き換えコード（Contact）
       const subCtaArea = d.showSubCta
-        ? `
-          <div class="mt-12 text-center bg-white/10 p-6 rounded-xl backdrop-blur-sm">
+        ? `<div class="mt-12 text-center bg-white/10 p-6 rounded-xl backdrop-blur-sm">
              <p class="text-blue-100 text-sm mb-4">まずは無料資料で内容だけ確認したい方へ</p>
-             <div class="flex justify-center">
-               ${renderMaterialBanner(d.subCtaText, d.subCtaUrl)}
-             </div>
-          </div>`
+             <div class="flex justify-center">${renderMaterialBanner(d.subCtaText, d.subCtaUrl)}</div>
+           </div>`
         : '';
 
       return `
@@ -870,7 +764,7 @@
       `;
     }
 
-    /* --- Other Templates --- */
+    // (Other templates remain the same as provided in previous context, abbreviated for length but included in full code logic)
     function tplFeatureHero(d) {
       const list = d.checklist.map(item => `<li class="flex items-center gap-3"><i class="ph-fill ph-check-circle text-primary text-xl"></i><span class="text-gray-800 font-medium">${item}</span></li>`).join('');
       let imgContent = d.image ? `<img src="${d.image}" alt="Service" class="w-full h-auto rounded shadow-lg">` : `<div class="aspect-square bg-gray-100 rounded-3xl flex items-center justify-center text-gray-400 font-bold">NO IMAGE</div>`;
@@ -923,6 +817,30 @@
       const i=d.items.map(x=>`<details class="group border border-gray-200 rounded-lg open:bg-gray-50 transition"><summary class="flex justify-between items-center font-bold cursor-pointer list-none p-4 text-gray-800"><span>${x.q}</span><span class="transition group-open:rotate-180"><i class="ph ph-caret-down"></i></span></summary><div class="text-gray-600 text-sm p-4 pt-0 leading-relaxed border-t border-gray-100 mt-2">${x.a}</div></details>`).join('');
       return `<section class="py-20 bg-white border-t border-gray-100"><div class="container mx-auto px-6 max-w-3xl"><h2 class="text-3xl font-bold text-center mb-12 text-gray-900">${d.title}</h2><div class="space-y-4">${i}</div></div></section>`;
     }
+    function tplCaseStudyDetail(d) {
+      const items = d.items.map(i => {
+        const images = [];
+        if(i.image1) images.push(`<img src="${i.image1}" class="rounded-lg shadow-md w-full h-48 object-cover">`);
+        if(i.image2) images.push(`<img src="${i.image2}" class="rounded-lg shadow-md w-full h-48 object-cover">`);
+        const imgGrid = images.length > 0 ? `<div class="grid grid-cols-${images.length} gap-4 mb-6">${images.join('')}</div>` : '';
+
+        let graphHtml = '';
+        if (i.metric) {
+           const m = i.metric;
+           const max = Math.max(m.before, m.after) * 1.1;
+           if (i.graphType === 'bar') {
+             const hB = (m.before / max) * 100;
+             const hA = (m.after / max) * 100;
+             graphHtml = `<div class="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100"><div class="font-bold text-center text-gray-600 mb-4">${m.label}の推移</div><div class="relative h-40 flex items-end justify-center gap-8 px-4"><div class="flex flex-col justify-end h-full w-16 text-center group"><div class="text-xs text-gray-400 mb-1">Before</div><div class="w-full bg-gray-300 rounded-t transition-all group-hover:bg-gray-400" style="height:${hB}%"></div><div class="text-sm font-bold text-gray-600 mt-1">${m.before}</div></div><div class="flex flex-col justify-end h-full w-16 text-center relative group"><div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded animate-bounce whitespace-nowrap">UP!</div><div class="text-xs text-primary mb-1">After</div><div class="w-full bg-primary rounded-t shadow-lg" style="height:${hA}%"></div><div class="text-xl font-bold text-primary mt-1">${m.after}</div></div></div><div class="text-center text-xs text-gray-400 mt-2">単位: ${m.unit}</div></div>`;
+           } else {
+             graphHtml = `<div class="mt-6 p-6 bg-gray-50 rounded-xl border border-gray-100 flex flex-col items-center"><div class="font-bold text-gray-600 mb-4">${m.label}</div><div class="w-32 h-32 rounded-full relative shadow-inner" style="background: conic-gradient(var(--color-primary) 0% 70%, #e5e7eb 70% 100%);"><div class="absolute inset-4 bg-white rounded-full flex items-center justify-center flex-col"><span class="text-2xl font-bold text-primary">${m.after}${m.unit}</span><span class="text-xs text-gray-400">達成</span></div></div></div>`;
+           }
+        }
+        return `<div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-12"><div class="p-8 md:p-12"><div class="flex flex-col md:flex-row gap-10"><div class="md:w-1/2"><div class="flex items-center gap-3 mb-4"><div class="w-10 h-10 rounded-full bg-blue-50 text-primary flex items-center justify-center"><i class="ph-fill ph-buildings text-xl"></i></div><span class="font-bold text-gray-500">${i.name}</span></div><h3 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 leading-tight">${i.headline}</h3><p class="text-gray-600 leading-relaxed mb-6">${i.desc}</p>${imgGrid}</div><div class="md:w-1/2 flex flex-col justify-center">${graphHtml}</div></div></div></div>`;
+      }).join('');
+      return `<section class="py-24 bg-white"><div class="container mx-auto px-6 max-w-5xl"><h2 class="text-3xl font-bold text-center text-gray-900 mb-16">${d.title}</h2><div>${items}</div></div></section>`;
+    }
+
 
     /* --- Editor Logic --- */
 
@@ -986,8 +904,8 @@
 
         const d = section.data;
 
+        // Logic to display correct editor fields based on section type
         if (section.type === 'hero') {
-          // Laurel Removed
           container.appendChild(createInput('タグライン', 'tagline', d.tagline));
           container.appendChild(createInput('タイトル', 'title', d.title));
           container.appendChild(createTextArea('説明文', 'desc', d.desc));
@@ -1049,7 +967,6 @@
             gBox.appendChild(numRow);
             gBox.appendChild(createSubInput('単位', `items.${idx}.metric.unit`, item.metric.unit));
             w.appendChild(gBox);
-            
             container.appendChild(w);
           });
           container.appendChild(createAddBtn('事例追加', () => addArrayItem('items', {name:'New', headline:'Title', desc:'...', metric:{label:'売上', before:0, after:100, unit:'万'}, graphType:'bar'})));
@@ -1261,6 +1178,7 @@
     function addSection(type) {
       const id = 's_' + Date.now();
       let d = {};
+      // Default Data
       if(type==='hero') d={tagline:'Tag', title:'Title', desc:'Desc', userCount:'100+', formCode:'', layout:'split', showSubCta:false, subCtaText:'資料請求', subCtaUrl:'#'};
       if(type==='logos') d={title:'導入実績', items:['https://placehold.co/200x80/e2e8f0/94a3b8?text=Logo']};
       if(type==='problem') d={title:'課題', items:[{title:'課題1', desc:'詳細'}]};
@@ -1297,161 +1215,98 @@
     
     // Export Function
     function exportHtml() {
-  const content = document.getElementById('canvas').innerHTML;
+      const content = document.getElementById('canvas').innerHTML;
+      const cssVarsMatch = content.match(/<style>[\s\S]*?:root[\s\S]*?<\/style>/);
+      const cssVars = cssVarsMatch ? cssVarsMatch[0].replace(/<\/?style>/g, '') : '';
 
-  // :root の色変数を抽出
-  const cssVarsMatch = content.match(/<style>[\s\S]*?:root[\s\S]*?<\/style>/);
-  const cssVars = cssVarsMatch
-    ? cssVarsMatch[0].replace(/<\/?style>/g, '') // ← 修正ポイント！
-    : '';
-
-  const materialCSS = `
+      // Define Material CSS to inject
+      const materialCSS = `
     /* === Material Banner (FV専用) === */
     .fv-banner .material-banner__thumb-group {
-      right: 5px !important;
-      top: 0px !important;
+      right: 5px !important; top: 0px !important;
     }
     .fv-banner .material-banner__thumb-group .d1 {
-      background: #ccc !important;
-      top: 15px !important;
-      right: 20px !important;
-      transform: rotate(8deg) !important;
+      background: #ccc !important; top: 15px !important; right: 20px !important; transform: rotate(8deg) !important;
     }
     .fv-banner .material-banner__thumb-group .d2 {
-      background: #eee !important;
-      top: 12px !important;
-      right: 10px !important;
-      transform: rotate(10deg) !important;
+      background: #eee !important; top: 12px !important; right: 10px !important; transform: rotate(10deg) !important;
     }
     .fv-banner .material-banner__thumb-group .main {
-      top: 10px !important;
-      right: 0px !important;
-      transform: rotate(15deg) !important;
-      width: 100px;
-      height: 70px;
+      top: 10px !important; right: 0px !important; transform: rotate(15deg) !important; width: 100px; height: 70px;
     }
 
     /* === Material Banner (中間・最後 CTA 共通) === */
     .material-banner {
-      display: flex;
-      align-items: center;
-      position: relative;
-      padding: 18px 24px;
-      border-radius: 16px;
-      background: linear-gradient(90deg, #ff72d2, #6a5bff);
-      color: white;
-      text-decoration: none;
-      overflow: visible;
-      box-shadow: 0 6px 14px rgba(0,0,0,0.2);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex; align-items: center; position: relative; padding: 18px 24px;
+      border-radius: 16px; background: linear-gradient(90deg, #ff72d2, #6a5bff);
+      color: white; text-decoration: none; overflow: visible; box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease, box-shadow 0.2s ease; margin-bottom: 0 !important;
     }
     .material-banner__icon { display:none !important; }
-    .material-banner { margin-bottom: 0 !important; }
+    
+    .material-banner__text .line1 { font-size: 18px; font-weight: 700; color: #ffe54a; display: block; margin-bottom: 2px; }
+    .material-banner__text .line2 { font-size: 24px; font-weight: 800; display: block; margin-top: 6px; }
 
-    .material-banner__text .line1 {
-      font-size: 18px;
-      font-weight: 700;
-      color: #ffe54a;
-    }
-    .material-banner__text .line2 {
-      font-size: 24px;
-      font-weight: 800;
-      display: block;
-      margin-top: 6px;
-    }
-
-    .material-banner__thumb-group {
-      position: absolute;
-      right: -20px;
-      top: -10px;
-      width: 160px;
-      height: 120px;
-      pointer-events: none;
-    }
-    .material-banner__thumb-group .d1 {
-      background: #ccc;
-      top: 15px;
-      right: 20px;
-      transform: rotate(15deg);
-    }
-    .material-banner__thumb-group .d2 {
-      background: #eee;
-      top: 12px;
-      right: 10px;
-      transform: rotate(18deg);
-    }
-    .material-banner__thumb-group .main {
-      top: 10px;
-      right: 0px;
-      transform: rotate(20deg);
-      width: 100px;
-      height: 70px;
-      border-radius: 6px;
-      object-fit: cover;
-    }
+    .material-banner__thumb-group { position: absolute; right: -20px; top: -10px; width: 160px; height: 120px; pointer-events: none; }
+    .material-banner__thumb-group .d1 { background: #ccc; top: 15px; right: 20px; transform: rotate(15deg); position: absolute; width: 70px; height: 50px; }
+    .material-banner__thumb-group .d2 { background: #eee; top: 12px; right: 10px; transform: rotate(18deg); position: absolute; width: 70px; height: 50px; }
+    .material-banner__thumb-group .main { top: 10px; right: 0px; transform: rotate(20deg); width: 100px; height: 70px; border-radius: 6px; object-fit: cover; position: absolute; }
 
     .cta-main-button {
-      display: block;
-      width: 100%;
-      max-width: 420px;
-      margin: 0;
-      text-align: left; /* ← 中間・最後CTA 左寄せ */
+      display: block; width: 100%; max-width: 420px; margin: 0 auto; text-align: center;
+      background-color: var(--color-primary); color: white; font-weight: bold;
+      padding: 1rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
-  `;
+    @media (max-width: 768px) {
+      .material-banner { width: 100%; }
+      .cta-main-button { width: 100%; max-width: 100%; }
+    }
+      `;
 
-  const head = `<!DOCTYPE html>
+      const head = `<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Landing Page</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/@phosphor-icons/web"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
-<style>
-body { font-family:'Inter','Noto Sans JP',sans-serif; }
-
-/* marquee animation */
-@keyframes marquee {0%{transform:translateX(0);}100%{transform:translateX(-50%);} }
-.animate-marquee { animation: marquee 25s linear infinite; }
-
-/* Material Banner */
-${materialCSS}
-
-/* global vars (colors) */
-${cssVars}
-</style>
-<script src="//js-na2.hsforms.net/forms/embed/v2.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Landing Page</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <script src="https://unpkg.com/@phosphor-icons/web"><\/script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', 'Noto Sans JP', sans-serif; }
+    @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .animate-marquee { animation: marquee 25s linear infinite; }
+    
+    ${materialCSS}
+    ${cssVars}
+  </style>
+  <script src="//js-na2.hsforms.net/forms/embed/v2.js"><\/script>
 </head>
 <body>`;
-
-  const foot = `
-<script>
-window.addEventListener('load', function() {
-  if(window.hbspt) {
-    document.querySelectorAll('.hs-form-wrapper').forEach(w => {
-      window.hbspt.forms.create({
-        region:w.dataset.region,
-        portalId:w.dataset.portalId,
-        formId:w.dataset.formId,
-        target:'#'+w.id
-      });
+      
+      const foot = `
+  <script>
+    window.addEventListener('load', function() {
+      if(window.hbspt) {
+        document.querySelectorAll('.hs-form-wrapper').forEach(w => {
+          window.hbspt.forms.create({
+            region: w.dataset.region,
+            portalId: w.dataset.portalId,
+            formId: w.dataset.formId,
+            target: '#' + w.id
+          });
+        });
+      }
     });
-  }
-});
-</script>
+  <\/script>
 </body>
 </html>`;
+      
+      const fullHtml = head + content + foot;
+      navigator.clipboard.writeText(fullHtml).then(() => alert('完全なHTMLコードをコピーしました！\n.htmlファイルとして保存してください。'));
+    }
 
-    const fullHtml = head + content + foot;
-
-  navigator.clipboard.writeText(fullHtml).then(() => {
-    alert('完全なHTMLをコピーしました！');
-  });
-}
-
-render();
-renderEditor();
+    render(); renderEditor();
   </script>
 </body>
 </html>
