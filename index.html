@@ -249,7 +249,10 @@
         secondaryColor: '#f97316', // Orange-500
         
         /* ▼ 追加 ▼ */
-        materialThumb: 'https://placehold.co/300x400?text=DOC' 
+        materialThumb: 'https://placehold.co/300x400?text=DOC',
+        materialLeadText: '詳しく知りたい方',
+        materialBackgroundStart: '#ff72d2',
+        materialBackgroundEnd: '#6a5bff'
       },
       sections: [
         {
@@ -518,26 +521,34 @@
     // 🎯 ③ 新関数: renderMaterialBanner
     function renderMaterialBanner(subText, subUrl) {
       const g = lpData.global;
-      // 設定がない場合はプレースホルダー
       const thumb = g.materialThumb || 'https://placehold.co/300x400?text=DOC';
-
+    
+      const lead = g.materialLeadText || '詳しく知りたい方';
+    
+      const gradStart = g.materialBackgroundStart || '#ff72d2';
+      const gradEnd = g.materialBackgroundEnd || '#6a5bff';
+    
       return `
-        <a href="${subUrl}" class="material-banner">
+        <a href="${subUrl}" class="material-banner"
+           style="background: linear-gradient(90deg, ${gradStart}, ${gradEnd});">
+    
           <div class="material-banner__icon">▶</div>
-
+    
           <div class="material-banner__text">
-            <span class="line1">詳しく知りたい方</span>
+            <span class="line1">${lead}</span>
             <span class="line2">${subText}</span>
           </div>
-
+    
           <div class="material-banner__thumb-group">
             <div class="thumb dummy d1"></div>
             <div class="thumb dummy d2"></div>
-            <img src="${thumb}" class="thumb main" />
+            <img src="${thumb}" class="thumb main">
           </div>
+    
         </a>
       `;
     }
+
 
     function renderBtnGroup(mainText, mainUrl, showSub, subText, subUrl, microCopy) {
       // マイクロコピー: relative配置 (中央寄せ)
@@ -905,6 +916,9 @@
         wrap.appendChild(createInput('SP固定ボタン文言', 'global.ctaText', g.ctaText));
         wrap.appendChild(createInput('リンク', 'global.ctaUrl', g.ctaUrl));
         wrap.appendChild(createInput('資料サムネイルURL', 'global.materialThumb', g.materialThumb));
+        wrap.appendChild(createInput('資料バナー：リード文（例：詳しく知りたい方）', 'global.materialLeadText', g.materialLeadText));
+        wrap.appendChild(createColorInput('資料バナー：グラデ左色',  'global.materialBackgroundStart', g.materialBackgroundStart));
+        wrap.appendChild(createColorInput('資料バナー：グラデ右色',  'global.materialBackgroundEnd', g.materialBackgroundEnd));
         
         const wrapTheme = container.querySelector('#global-theme');
         wrapTheme.appendChild(createColorInput('プライマリー', 'global.primaryColor', g.primaryColor));
